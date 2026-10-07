@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ফাইল ভল্ট — File Vault Dashboard</title>
+<style>
+:root{
+  --bg:#1a1d24; --card:#22262f; --card2:#2a2f3a; --text:#e8eaed; --muted:#9aa0b0;
+  --accent:#4f8cff; --accent2:#7c5cff; --border:#343a47; --danger:#ff5d6c; --good:#3ecf8e;
+  --radius:12px; --shadow:0 8px 24px rgba(0,0,0,.30); --sidebar-w:220px; --sidebar-w-collapsed:64px;
+}
+[data-theme="light"]{
+  --bg:#f6f6f4; --card:#ffffff; --card2:#f0f0ee; --text:#1c1e22; --muted:#6b7280;
+  --accent:#4a56e2; --accent2:#8a5cf6; --border:#e3e4e8; --danger:#e0475a; --good:#1fa971;
+  --shadow:0 8px 24px rgba(20,20,30,.08);
+}
+[data-theme="navy"]{
+  --bg:#eef0fa; --card:#ffffff; --card2:#e9e6f7; --text:#1e1b3a; --muted:#5c5a80;
+  --accent:#3b3277; --accent2:#8a5cf6; --border:#dcd8f0; --danger:#c8394a; --good:#1e8f6a;
+  --shadow:0 8px 24px rgba(45,30,90,.10);
+}
+[data-theme="sky"]{
+  --bg:#eaf6fd; --card:#ffffff; --card2:#dcf1fb; --text:#0b2735; --muted:#3f7690;
+  --accent:#0ea5e9; --accent2:#38bdf8; --border:#c9e9f7; --danger:#e0475a; --good:#0d9c72;
+  --shadow:0 8px 24px rgba(14,165,233,.12);
+}
+[data-theme="aurora"]{
+  --bg:#150f1e; --card:#1e1730; --card2:#271e3d; --text:#f2ecf8; --muted:#a99cc2;
+  --accent:#b34fff; --accent2:#ff5ec4; --border:#332750; --danger:#ff5d6c; --good:#4de3a5;
+  --shadow:0 8px 30px rgba(179,79,255,.14);
+}
+[data-theme="aurora"] body{
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(179,79,255,.16), transparent 60%),
+    radial-gradient(1000px 500px at 110% 10%, rgba(255,94,196,.14), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  animation: auroraShift 18s ease-in-out infinite alternate;
+}
+@keyframes auroraShift{0%{background-position:0% 0%,100% 0%,0 0;}100%{background-position:10% 10%,90% 20%,0 0;}}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s;}
+button{cursor:pointer;font-family:inherit;}
+
+/* ---------- layout ---------- */
+.app{display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--card);border-right:1px solid var(--border);padding:16px 10px;transition:width .2s;position:sticky;top:0;height:100vh;overflow-x:hidden;display:flex;flex-direction:column;}
+.sidebar.collapsed{width:var(--sidebar-w-collapsed);}
+.side-brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;}
+.side-brand .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.side-brand span{font-weight:700;font-size:15px;white-space:nowrap;}
+.sidebar.collapsed .side-brand span, .sidebar.collapsed .nav-item span{display:none;}
+.sidebar.collapsed #sideUserBlock{display:none;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;color:var(--muted);font-size:13px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;}
+.nav-item .ic{font-size:16px;flex-shrink:0;width:20px;text-align:center;}
+.nav-item:hover{background:var(--card2);color:var(--text);}
+.nav-item.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.toggle-side{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border-radius:9px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:12px;margin-top:10px;}
+
+.main{flex:1;min-width:0;padding:20px 22px 60px;}
+.view{display:none;}
+.view.active{display:block;}
+.view-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.view-head h2{margin:0;font-size:20px;}
+.view-head small{color:var(--muted);display:block;font-size:11px;margin-top:2px;}
+.header-actions{display:flex;gap:8px;align-items:center;}
+
+.btn{border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:.15s;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--accent);}
+.btn-ghost:disabled{opacity:.45;cursor:not-allowed;}
+.btn-danger{background:var(--card2);color:var(--danger);border:1px solid var(--border);}
+.btn-danger:hover{border-color:var(--danger);}
+.btn-danger:disabled{opacity:.45;cursor:not-allowed;color:var(--muted);}
+.icon-btn{width:38px;height:38px;border-radius:9px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:16px;display:flex;align-items:center;justify-content:center;}
+.icon-btn:hover{border-color:var(--accent);}
+
+.toolbar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px;box-shadow:var(--shadow);}
+.toolbar-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.search-box{flex:1;min-width:180px;position:relative;}
+.search-box input{width:100%;padding:10px 30px 10px 34px;border-radius:9px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:13px;}
+.search-box::before{content:"🔍";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6;}
+.search-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;background:none;border:none;color:var(--muted);font-size:14px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0;cursor:pointer;}
+.search-clear:hover{background:var(--border);color:var(--text);}
+.authpw-wrap{position:relative;}
+.authpw-wrap input{padding-right:36px !important;}
+.authpw-wrap input{width:100%;padding-right:36px;}
+.authpw-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:none;border:none;color:var(--muted);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.authpw-toggle:hover{background:var(--border);color:var(--text);}
+.search-box.has-text .search-clear{display:flex;}
+select, input[type=date], input[type=text], input[type=number], input[type=email], input[type=password]{padding:9px 10px;border-radius:9px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:13px;}
+.stat-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.stat{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font-size:12px;color:var(--muted);}
+.stat b{color:var(--text);font-size:13px;}
+.fromto-wrap{display:flex;gap:6px;align-items:center;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:4px 8px;}
+.fromto-wrap label{font-size:11px;color:var(--muted);white-space:nowrap;}
+.fromto-wrap input[type=date]{border:none;background:transparent;padding:5px 2px;}
+
+.table-actions-row{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+thead th{background:var(--card2);text-align:left;padding:10px 12px;font-size:12.5px;font-weight:700;letter-spacing:.3px;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th.nosort{cursor:default;}
+thead th:hover:not(.nosort){color:var(--accent);}
+thead th .arrow{font-size:9px;margin-left:3px;opacity:.6;}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;max-width:180px;font-size:14px;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:nth-child(odd){background:var(--card);}
+tbody tr:nth-child(even){background:color-mix(in srgb, var(--text) 7%, var(--card));}
+tbody tr:hover{background:var(--card2);}
+tbody tr.selected{background:rgba(79,140,255,.08);}
+.clickable{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:180px;cursor:pointer;color:var(--text);text-decoration:underline dotted;text-underline-offset:3px;}
+.clickable:hover{color:var(--accent);}
+.type-badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:var(--card2);border:1px solid var(--border);white-space:nowrap;}
+.chk{width:16px;height:16px;}
+.pw-cell{display:flex;align-items:center;gap:6px;}
+.pw-mask{font-family:monospace;letter-spacing:1px;}
+.pw-toggle{background:none;border:none;color:var(--muted);font-size:13px;}
+.pw-toggle:hover{color:var(--accent);}
+.nowrap{white-space:nowrap;}
+.narrow-col{max-width:120px;}
+
+/* photo column */
+.photo-thumb{width:38px;height:38px;border-radius:7px;object-fit:cover;cursor:pointer;border:1px solid var(--border);display:block;}
+.photo-thumb-empty{width:38px;height:38px;border-radius:7px;cursor:pointer;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;background:var(--card2);color:var(--muted);font-size:16px;padding:0;}
+.photo-thumb-empty:hover{color:var(--accent);border-color:var(--accent);}
+.photo-nav-btn{padding:6px 12px;font-size:18px;line-height:1;}
+.photo-placeholder{color:var(--muted);font-size:11px;}
+
+/* mark/color */
+.mark-btn{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);background:var(--card2);padding:0;flex-shrink:0;}
+.mark-menu{position:fixed;z-index:400;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px;box-shadow:var(--shadow);display:flex;gap:6px;flex-wrap:wrap;width:172px;}
+.mark-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;padding:0;}
+.mark-swatch:hover{border-color:var(--text);}
+.mark-cancel{width:22px;height:22px;border-radius:50%;cursor:pointer;border:1px dashed var(--muted);background:transparent;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);padding:0;}
+
+.empty-state{padding:60px 20px;text-align:center;color:var(--muted);}
+.empty-state .big{font-size:38px;margin-bottom:10px;}
+
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.dash-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+.dash-card .n{font-size:30px;font-weight:800;margin:6px 0 2px;}
+.dash-card .l{color:var(--muted);font-size:12px;}
+.dash-card .ic{font-size:22px;}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;}
+.overlay.active{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);}
+.modal.narrow{max-width:420px;}
+.modal.photo-modal{max-width:1250px;width:100%;}
+.modal-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-head h3{margin:0;font-size:16px;}
+.modal-body{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-body .full{grid-column:1/-1;}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;}
+.field input,.field select,.field textarea{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:13px;font-family:inherit;}
+.field textarea{resize:vertical;min-height:56px;}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
+.close-x{background:none;border:none;color:var(--muted);font-size:20px;line-height:1;}
+.hint{font-size:11px;color:var(--muted);margin-top:6px;grid-column:1/-1;}
+.view-pop-text{white-space:pre-wrap;line-height:1.6;font-size:14px;padding:4px 2px;}
+.view-pop-link{margin-top:12px;display:inline-block;}
+.photo-pop-body{display:flex;align-items:center;justify-content:center;height:800px;max-height:75vh;background:var(--card2);border-radius:10px;}
+.photo-pop-body img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;}
+.photo-preview-thumb{width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);margin-top:8px;}
+
+.theme-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;grid-column:1/-1;}
+.theme-swatch{border:2px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center;font-size:11px;cursor:pointer;}
+.theme-swatch.active{border-color:var(--accent);}
+.swatch-dot{width:22px;height:22px;border-radius:50%;margin:0 auto 6px;}
+.conn-status{font-size:12px;padding:8px 10px;border-radius:8px;margin-top:8px;grid-column:1/-1;}
+.conn-status.ok{background:rgba(62,207,142,.12);color:var(--good);}
+.conn-status.bad{background:rgba(255,93,108,.12);color:var(--danger);}
+.conn-status.pending{background:var(--card2);color:var(--muted);}
+.settings-btn-row{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;}
+
+@media(max-width:900px){
+  .sidebar{position:fixed;z-index:90;left:0;top:0;}
+  .sidebar.collapsed{width:0;padding:16px 0;overflow:hidden;}
+  .main{padding:16px 12px 60px;}
+}
+@media(max-width:640px){
+  .modal-body{grid-template-columns:1fr;}
+  .photo-pop-body{height:60vh;}
+}
+</style>
+</head>
+<body>
+<!-- ===== LOGIN / SIGNUP GATE ===== -->
+<div class="overlay active" id="authOverlay" style="z-index:300;">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-head"><h3 id="authTitle">🔐 সাইন ইন করুন</h3></div>
+    <div class="modal-body" style="grid-template-columns:1fr;">
+      <div class="field full" id="authUrlField">
+        <label>Google Apps Script Web App URL</label>
+        <input type="text" id="authScriptUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+        <div class="hint">এই ড্যাশবোর্ডের ব্যাকএন্ড URL — একবার বসালে এই ব্রাউজারে সেভ হয়ে থাকবে, পরে সাইন ইন করার সময় আর দেখাবে না (সাইন ইনের পর সেটিংস থেকে বদলানো যাবে)।</div>
+      </div>
+      <div class="field full" id="authUrlToggleRow" style="display:none;">
+        <a href="#" id="authUrlToggleLink" style="font-size:12px;">🔧 ব্যাকএন্ড URL পরিবর্তন করুন</a>
+      </div>
+
+      <div id="signInFields">
+        <div class="field full"><label>ইউজার আইডি</label><input type="text" id="si_userId" autocomplete="username" placeholder="যেমন: mh_riyadh"></div>
+        <div class="field full"><label>পাসওয়ার্ড</label>
+          <div class="authpw-wrap"><input type="password" id="si_password" autocomplete="current-password"><button type="button" class="authpw-toggle" data-pw-target="si_password" title="পাসওয়ার্ড দেখুন">👁️</button></div>
+        </div>
+      </div>
+
+      <div id="signUpFields" style="display:none;">
+        <div class="field full"><label>ফুল নেম</label><input type="text" id="su_fullName"></div>
+        <div class="field full"><label>ইউজার আইডি (শুধু ইংরেজি অক্ষর/সংখ্যা/আন্ডারস্কোর)</label><input type="text" id="su_userId" autocomplete="username"></div>
+        <div class="field full"><label>ইমেইল</label><input type="email" id="su_email" autocomplete="email"></div>
+        <div class="field full"><label>পাসওয়ার্ড</label>
+          <div class="authpw-wrap"><input type="password" id="su_password" autocomplete="new-password"><button type="button" class="authpw-toggle" data-pw-target="su_password" title="পাসওয়ার্ড দেখুন">👁️</button></div>
+        </div>
+        <div class="field full"><label>পাসওয়ার্ড আবার লিখুন</label>
+          <div class="authpw-wrap"><input type="password" id="su_password2" autocomplete="new-password"><button type="button" class="authpw-toggle" data-pw-target="su_password2" title="পাসওয়ার্ড দেখুন">👁️</button></div>
+        </div>
+      </div>
+
+      <div class="field full" id="authError" style="display:none;color:#ff5d6c;font-size:12.5px;font-weight:600;"></div>
+      <div class="field full" id="authBusy" style="display:none;color:var(--muted);font-size:12.5px;">অপেক্ষা করুন...</div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;align-items:center;">
+      <a href="#" id="authToggleLink" style="font-size:13px;">নতুন? সাইন আপ করুন</a>
+      <button class="btn btn-primary" id="authSubmitBtn">সাইন ইন করুন</button>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="appRoot" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-brand"><div class="logo">🗂️</div><span>ফাইল ভল্ট</span></div>
+    <div class="nav-item active" data-view="dashboard"><span class="ic">🏠</span><span>ড্যাশবোর্ড</span></div>
+    <div class="nav-item" data-view="files"><span class="ic">💻</span><span>কম্পিউটার ফাইল</span></div>
+    <div class="nav-item" data-view="automation"><span class="ic">⚙️</span><span>অটোমেশন প্রজেক্ট</span></div>
+    <div class="nav-item" data-view="email"><span class="ic">✉️</span><span>ইমেইল</span></div>
+    <div class="nav-item" data-view="passwordNote"><span class="ic">🔑</span><span>পাসওয়ার্ড নোট</span></div>
+    <div id="sideUserBlock" style="margin-top:auto;padding:10px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">
+      <div id="sideUserName" style="color:var(--text);font-weight:600;margin-bottom:6px;">-</div>
+      <button class="btn btn-ghost" id="logoutBtn" style="width:100%;font-size:12px;padding:6px 8px;">🚪 লগআউট</button>
+    </div>
+    <button class="toggle-side" id="toggleSideBtn"><span>☰</span><span id="toggleSideLabel">সাইডবার লুকান</span></button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <section class="view active" id="view-dashboard">
+      <div class="view-head">
+        <div><h2>ড্যাশবোর্ড</h2><small>সারসংক্ষেপ</small></div>
+        <div class="header-actions">
+          <button class="icon-btn" id="settingsBtn2" title="সেটিংস">⚙️</button>
+        </div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-card"><div class="ic">💻</div><div class="n" id="dashFileCount">0</div><div class="l">কম্পিউটার ফাইল এন্ট্রি</div></div>
+        <div class="dash-card"><div class="ic">⚙️</div><div class="n" id="dashAutoCount">0</div><div class="l">অটোমেশন প্রজেক্ট এন্ট্রি</div></div>
+        <div class="dash-card"><div class="ic">✉️</div><div class="n" id="dashEmailCount">0</div><div class="l">ইমেইল এন্ট্রি</div></div>
+        <div class="dash-card"><div class="ic">🔑</div><div class="n" id="dashPwCount">0</div><div class="l">পাসওয়ার্ড নোট এন্ট্রি</div></div>
+        <div class="dash-card"><div class="ic">📦</div><div class="n" id="dashTotalSize">0 MB</div><div class="l">মোট ফাইল সাইজ</div></div>
+        <div class="dash-card"><div class="ic">🖼️</div><div class="n" id="dashTotalPhotos">0</div><div class="l">মোট ছবি (সবগুলো কার্ড মিলিয়ে)</div></div>
+      </div>
+    </section>
+
+    <!-- ===== COMPUTER FILES VIEW ===== -->
+    <section class="view" id="view-files">
+      <div class="view-head">
+        <div><h2>কম্পিউটার ফাইল</h2><small id="syncStatus">লোকাল ক্যাশ থেকে লোড হয়েছে</small><br><small id="filesStatsLine" style="color:var(--muted);"></small></div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" id="syncBtn">🔄 সিঙ্ক</button>
+          <button class="icon-btn" id="settingsBtn" title="সেটিংস">⚙️</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-row">
+          <div class="search-box"><input type="text" id="searchInput" placeholder="ফাইলের নাম বা তারিখ দিয়ে খুঁজুন..."><button type="button" class="search-clear" id="searchClearBtn" title="সার্চ মুছুন">✕</button></div>
+          <select id="typeFilter"><option value="">সব ধরনের ফাইল</option></select>
+          <div class="fromto-wrap"><label>থেকে</label><input type="date" id="fromDate"><label>পর্যন্ত</label><input type="date" id="toDate"></div>
+          <select id="sortSelect">
+            <option value="date_desc">তারিখ ↓ (নতুন আগে)</option>
+            <option value="date_asc">তারিখ ↑ (পুরনো আগে)</option>
+            <option value="name_asc">নাম A → Z</option>
+            <option value="name_desc">নাম Z → A</option>
+          </select>
+        </div>
+        <div class="stat-strip">
+          <div class="stat">মোট ফাইল: <b id="statCount">0</b></div>
+          <div class="stat">মোট সাইজ: <b id="statSize">0 MB</b></div>
+          <div class="stat">ফাইল টাইপ: <b id="statTypes">0</b></div>
+        </div>
+      </div>
+      <div class="table-actions-row">
+        <button class="btn btn-primary" id="addBtn">➕ অ্যাড এন্ট্রি</button>
+        <button class="btn btn-ghost" id="editBtn" disabled>✏️ এডিট</button>
+        <button class="btn btn-danger" id="deleteBtn" disabled>🗑️ ডিলিট</button>
+      </div>
+      <div class="table-wrap">
+        <table id="fileTable">
+          <thead><tr>
+            <th class="nosort" style="width:34px;"><input type="checkbox" class="chk" id="checkAllFiles"></th>
+            <th class="nosort" style="width:34px;">Mark</th>
+            <th data-key="sl" style="width:57px;">SL<span class="arrow"></span></th>
+            <th data-key="date" style="width:130px;">Date<span class="arrow"></span></th>
+            <th data-key="name">File Name<span class="arrow"></span></th>
+            <th data-key="type">Type<span class="arrow"></span></th>
+            <th class="nosort">Description</th>
+            <th data-key="size">Size<span class="arrow"></span></th>
+            <th class="nosort">Location</th>
+            <th class="nosort">Note</th>
+            <th class="nosort" style="width:50px;">Photo</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display:none;"><div class="big">📁</div><div>এখনো কোনো ফাইল যোগ করা হয়নি। "অ্যাড এন্ট্রি" বাটনে ক্লিক করুন।</div></div>
+      </div>
+    </section>
+
+    <!-- ===== AUTOMATION PROJECT VIEW ===== -->
+    <section class="view" id="view-automation">
+      <div class="view-head">
+        <div><h2>অটোমেশন প্রজেক্ট</h2><small id="autoSyncStatus">লোকাল ক্যাশ থেকে লোড হয়েছে</small><br><small id="autoStatsLine" style="color:var(--muted);"></small></div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" id="autoSyncBtn">🔄 সিঙ্ক</button>
+          <button class="icon-btn" id="settingsBtn3" title="সেটিংস">⚙️</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-row">
+          <div class="search-box"><input type="text" id="autoSearchInput" placeholder="প্রজেক্টের নাম বা তারিখ দিয়ে খুঁজুন..."><button type="button" class="search-clear" id="autoSearchClearBtn" title="সার্চ মুছুন">✕</button></div>
+          <select id="autoTypeFilter"><option value="">সব ধরনের টাইপ</option><option>RainMaker</option><option>Firebase</option></select>
+          <div class="fromto-wrap"><label>থেকে</label><input type="date" id="autoFromDate"><label>পর্যন্ত</label><input type="date" id="autoToDate"></div>
+          <select id="autoSortSelect">
+            <option value="date_desc">তারিখ ↓ (নতুন আগে)</option>
+            <option value="date_asc">তারিখ ↑ (পুরনো আগে)</option>
+            <option value="name_asc">নাম A → Z</option>
+            <option value="name_desc">নাম Z → A</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-actions-row">
+        <button class="btn btn-primary" id="autoAddBtn">➕ অ্যাড এন্ট্রি</button>
+        <button class="btn btn-ghost" id="autoEditBtn" disabled>✏️ এডিট</button>
+        <button class="btn btn-danger" id="autoDeleteBtn" disabled>🗑️ ডিলিট</button>
+      </div>
+      <div class="table-wrap">
+        <table id="autoTable">
+          <thead><tr>
+            <th class="nosort" style="width:34px;"><input type="checkbox" class="chk" id="checkAllAuto"></th>
+            <th class="nosort" style="width:34px;">Mark</th>
+            <th data-key="sl" style="width:57px;">SL<span class="arrow"></span></th>
+            <th data-key="date" style="width:130px;">Date<span class="arrow"></span></th>
+            <th data-key="name">Project Name<span class="arrow"></span></th>
+            <th data-key="type">Type<span class="arrow"></span></th>
+            <th class="nosort" style="width:130px;">Description</th>
+            <th class="nosort" style="width:130px;">Location</th>
+            <th data-key="maker">File Maker<span class="arrow"></span></th>
+            <th class="nosort" style="width:130px;">Note</th>
+            <th class="nosort" style="width:64px;">Photo</th>
+          </tr></thead>
+          <tbody id="autoTableBody"></tbody>
+        </table>
+        <div class="empty-state" id="autoEmptyState" style="display:none;"><div class="big">⚙️</div><div>এখনো কোনো অটোমেশন প্রজেক্ট যোগ করা হয়নি।</div></div>
+      </div>
+    </section>
+
+    <!-- ===== EMAIL VIEW ===== -->
+    <section class="view" id="view-email">
+      <div class="view-head">
+        <div><h2>ইমেইল</h2><small id="emailSyncStatus">লোকাল ক্যাশ থেকে লোড হয়েছে</small><br><small id="emailStatsLine" style="color:var(--muted);"></small></div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" id="emailSyncBtn">🔄 সিঙ্ক</button>
+          <button class="icon-btn" id="settingsBtn4" title="সেটিংস">⚙️</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-row">
+          <div class="search-box"><input type="text" id="emailSearchInput" placeholder="নাম বা ইমেইল দিয়ে খুঁজুন..."><button type="button" class="search-clear" id="emailSearchClearBtn" title="সার্চ মুছুন">✕</button></div>
+          <div class="fromto-wrap"><label>থেকে</label><input type="date" id="emailFromDate"><label>পর্যন্ত</label><input type="date" id="emailToDate"></div>
+          <select id="emailSortSelect">
+            <option value="date_desc">তারিখ ↓ (নতুন আগে)</option>
+            <option value="date_asc">তারিখ ↑ (পুরনো আগে)</option>
+            <option value="name_asc">নাম A → Z</option>
+            <option value="name_desc">নাম Z → A</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-actions-row">
+        <button class="btn btn-primary" id="emailAddBtn">➕ অ্যাড এন্ট্রি</button>
+        <button class="btn btn-ghost" id="emailEditBtn" disabled>✏️ এডিট</button>
+        <button class="btn btn-danger" id="emailDeleteBtn" disabled>🗑️ ডিলিট</button>
+      </div>
+      <div class="table-wrap">
+        <table id="emailTable">
+          <thead><tr>
+            <th class="nosort" style="width:34px;"><input type="checkbox" class="chk" id="checkAllEmail"></th>
+            <th class="nosort" style="width:34px;">Mark</th>
+            <th data-key="sl" style="width:57px;">SL<span class="arrow"></span></th>
+            <th data-key="date" style="width:130px;">Date<span class="arrow"></span></th>
+            <th data-key="name">Name<span class="arrow"></span></th>
+            <th class="nosort" style="width:280px;">Email</th>
+            <th class="nosort" style="width:185px;">Password</th>
+            <th class="nosort" style="width:180px;">Recovery Email</th>
+            <th class="nosort" style="width:137px;">Mobile Number</th>
+            <th class="nosort" style="width:85px;">Passkey</th>
+            <th data-key="lastUpdate" style="width:130px;">Last Update<span class="arrow"></span></th>
+            <th class="nosort">Note</th>
+          </tr></thead>
+          <tbody id="emailTableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emailEmptyState" style="display:none;"><div class="big">✉️</div><div>এখনো কোনো ইমেইল এন্ট্রি যোগ করা হয়নি।</div></div>
+      </div>
+    </section>
+
+    <!-- ===== PASSWORD NOTE VIEW ===== -->
+    <section class="view" id="view-passwordNote">
+      <div class="view-head">
+        <div><h2>পাসওয়ার্ড নোট</h2><small id="pwSyncStatus">লোকাল ক্যাশ থেকে লোড হয়েছে</small><br><small id="pwStatsLine" style="color:var(--muted);"></small></div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" id="pwSyncBtn">🔄 সিঙ্ক</button>
+          <button class="icon-btn" id="settingsBtn5" title="সেটিংস">⚙️</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-row">
+          <div class="search-box"><input type="text" id="pwSearchInput" placeholder="সাইট, নাম বা ইমেইল দিয়ে খুঁজুন..."><button type="button" class="search-clear" id="pwSearchClearBtn" title="সার্চ মুছুন">✕</button></div>
+          <div class="fromto-wrap"><label>থেকে</label><input type="date" id="pwFromDate"><label>পর্যন্ত</label><input type="date" id="pwToDate"></div>
+          <select id="pwSortSelect">
+            <option value="date_desc">তারিখ ↓ (নতুন আগে)</option>
+            <option value="date_asc">তারিখ ↑ (পুরনো আগে)</option>
+            <option value="name_asc">নাম A → Z</option>
+            <option value="name_desc">নাম Z → A</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-actions-row">
+        <button class="btn btn-primary" id="pwAddBtn">➕ অ্যাড এন্ট্রি</button>
+        <button class="btn btn-ghost" id="pwEditBtn" disabled>✏️ এডিট</button>
+        <button class="btn btn-danger" id="pwDeleteBtn" disabled>🗑️ ডিলিট</button>
+      </div>
+      <div class="table-wrap">
+        <table id="pwTable">
+          <thead><tr>
+            <th class="nosort" style="width:34px;"><input type="checkbox" class="chk" id="checkAllPw"></th>
+            <th class="nosort" style="width:34px;">Mark</th>
+            <th data-key="sl" style="width:57px;">SL<span class="arrow"></span></th>
+            <th data-key="date" style="width:130px;">Date<span class="arrow"></span></th>
+            <th class="nosort">Site Name</th>
+            <th data-key="name">Name<span class="arrow"></span></th>
+            <th class="nosort">User Name</th>
+            <th class="nosort" style="width:220px;">Email</th>
+            <th class="nosort" style="width:185px;">Password</th>
+            <th class="nosort">Note</th>
+            <th class="nosort" style="width:50px;">Photo</th>
+          </tr></thead>
+          <tbody id="pwTableBody"></tbody>
+        </table>
+        <div class="empty-state" id="pwEmptyState" style="display:none;"><div class="big">🔑</div><div>এখনো কোনো পাসওয়ার্ড নোট যোগ করা হয়নি।</div></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===== Add/Edit Modal: Computer Files ===== -->
+<div class="overlay" id="fileOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modalTitle">নতুন ফাইল যোগ করুন</h3><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="field"><label>SL নম্বর</label><input type="text" id="f_sl" readonly></div>
+      <div class="field"><label>তারিখ</label><input type="date" id="f_date"></div>
+      <div class="field full"><label>ফাইলের নাম *</label><input type="text" id="f_name" placeholder="যেমন: বাসার_চুক্তিপত্র.pdf"></div>
+      <div class="field">
+        <label>ফাইল টাইপ</label>
+        <select id="f_type"><option>PDF</option><option>ভিডিও</option><option>ফটো</option><option>জিপ ফাইল</option><option>ফোল্ডার</option><option>নোট</option><option>ডকুমেন্ট</option><option>অডিও</option><option>অন্যান্য</option></select>
+      </div>
+      <div class="field"><label>ফাইল সাইজ (MB)</label><input type="number" step="0.01" id="f_size" placeholder="যেমন: 12.5"></div>
+      <div class="field full"><label>ফাইলের লোকেশন (পূর্ণ পাথ) *</label><input type="text" id="f_location" placeholder="যেমন: D:\Documents\Papers\file.pdf"></div>
+      <div class="field full"><label>বর্ণনা</label><textarea id="f_desc" placeholder="ফাইল সম্পর্কে বিস্তারিত..."></textarea></div>
+      <div class="field full"><label>নোট</label><textarea id="f_note" placeholder="অতিরিক্ত নোট..."></textarea></div>
+      <div class="field full">
+        <label>ফাইল বাছাই করুন (ঐচ্ছিক — নাম ও সাইজ অটো-ফিল হবে)</label>
+        <input type="file" id="f_upload">
+        <div class="hint">⚠️ ব্রাউজার সিকিউরিটির কারণে ফাইল বাছাই করলে শুধু নাম ও সাইজ পাওয়া যায় — পূর্ণ পাথ ম্যানুয়ালি লিখতে হবে।</div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>বাতিল</button><button class="btn btn-primary" id="saveBtn">সংরক্ষণ করুন</button></div>
+  </div>
+</div>
+
+<!-- ===== Add/Edit Modal: Automation Project ===== -->
+<div class="overlay" id="autoOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="autoModalTitle">নতুন অটোমেশন প্রজেক্ট যোগ করুন</h3><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="autoEditId">
+      <div class="field"><label>SL নম্বর</label><input type="text" id="a_sl" readonly></div>
+      <div class="field"><label>তারিখ</label><input type="date" id="a_date"></div>
+      <div class="field full"><label>প্রজেক্টের নাম *</label><input type="text" id="a_name" placeholder="যেমন: Kitchen_Light_Automation"></div>
+      <div class="field">
+        <label>টাইপ</label>
+        <select id="a_type">
+          <option value="custom">অন্যান্য (লিখুন)</option>
+          <option value="RainMaker">রেইন মেকার (ESP RainMaker)</option>
+          <option value="Firebase">ফায়ার বেজ (Firebase)</option>
+        </select>
+        <input type="text" id="a_type_custom" placeholder="টাইপ লিখুন..." style="display:none;margin-top:6px;">
+      </div>
+      <div class="field">
+        <label>ফাইল মেকার</label>
+        <input type="text" id="a_maker" list="makerList" placeholder="নাম লিখুন বা বাছাই করুন">
+        <datalist id="makerList"></datalist>
+        <div class="hint" style="grid-column:auto;">নতুন নাম লিখে সেভ করলে সেটি ভবিষ্যতের জন্য অপশনে যুক্ত হয়ে যাবে।</div>
+      </div>
+      <div class="field full"><label>প্রজেক্টের বর্ণনা</label><textarea id="a_desc"></textarea></div>
+      <div class="field full"><label>লোকেশন</label><input type="text" id="a_location" placeholder="ফাইল বা প্রজেক্টের পাথ/লিংক"></div>
+      <div class="field full"><label>নোট</label><textarea id="a_note"></textarea></div>
+      <div class="hint" style="grid-column:1/-1;">ছবি এখন এন্ট্রি সেভ করার পর টেবিলের "Photo" কলামে ক্লিক করে যুক্ত/ডিলিট করা যাবে (একাধিক ছবি সাপোর্ট করে)।</div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>বাতিল</button><button class="btn btn-primary" id="autoSaveBtn">সংরক্ষণ করুন</button></div>
+  </div>
+</div>
+
+<!-- ===== Add/Edit Modal: Email ===== -->
+<div class="overlay" id="emailOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="emailModalTitle">নতুন ইমেইল এন্ট্রি যোগ করুন</h3><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="emailEditId">
+      <div class="field"><label>SL নম্বর</label><input type="text" id="e_sl" readonly></div>
+      <div class="field"><label>তারিখ</label><input type="date" id="e_date"></div>
+      <div class="field full"><label>নেম *</label><input type="text" id="e_name" placeholder="অ্যাকাউন্টের নাম/লেবেল"></div>
+      <div class="field full"><label>ইমেইল *</label><input type="text" id="e_email" placeholder="example@gmail.com"></div>
+      <div class="field"><label>পাসওয়ার্ড</label><input type="text" id="e_password"></div>
+      <div class="field"><label>রিকভারি ইমেইল</label><input type="text" id="e_recovery"></div>
+      <div class="field"><label>মোবাইল নম্বর</label><input type="text" id="e_mobile"></div>
+      <div class="field"><label>পাস কি</label><input type="text" id="e_passkey"></div>
+      <div class="field"><label>লাস্ট আপডেট ডেট</label><input type="date" id="e_lastupdate"></div>
+      <div class="field full"><label>নোট</label><textarea id="e_note"></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>বাতিল</button><button class="btn btn-primary" id="emailSaveBtn">সংরক্ষণ করুন</button></div>
+  </div>
+</div>
+
+<!-- ===== Add/Edit Modal: Password Note ===== -->
+<div class="overlay" id="pwOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="pwModalTitle">নতুন পাসওয়ার্ড নোট যোগ করুন</h3><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="pw_editId">
+      <div class="field"><label>SL নম্বর</label><input type="text" id="pw_sl" readonly></div>
+      <div class="field"><label>তারিখ</label><input type="date" id="pw_date"></div>
+      <div class="field full"><label>সাইট নেম *</label><input type="text" id="pw_siteName" placeholder="যেমন: facebook.com"></div>
+      <div class="field"><label>নেম</label><input type="text" id="pw_name"></div>
+      <div class="field"><label>ইউজার নেম</label><input type="text" id="pw_userName"></div>
+      <div class="field full"><label>ইমেইল</label><input type="text" id="pw_email" placeholder="example@gmail.com"></div>
+      <div class="field"><label>পাসওয়ার্ড</label><input type="text" id="pw_password"></div>
+      <div class="field full"><label>নোট</label><textarea id="pw_note"></textarea></div>
+      <div class="hint" style="grid-column:1/-1;">ছবি এন্ট্রি সেভ করার পর টেবিলের "Photo" কলামে ক্লিক করে যুক্ত/ডিলিট করা যাবে (একাধিক ছবি সাপোর্ট করে)।</div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>বাতিল</button><button class="btn btn-primary" id="pwSaveBtn">সংরক্ষণ করুন</button></div>
+  </div>
+</div>
+
+<!-- ===== View-only / editable-note popup (click on truncated cell) ===== -->
+<div class="overlay" id="viewPopOverlay">
+  <div class="modal narrow">
+    <div class="modal-head"><h3 id="viewPopTitle">বিস্তারিত</h3><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body" style="display:block;">
+      <div class="view-pop-text" id="viewPopText"></div>
+      <textarea id="viewPopEditText" rows="8" style="width:100%;display:none;"></textarea>
+      <a href="#" id="viewPopLink" class="view-pop-link btn btn-ghost" style="display:none;">📂 ফাইল ওপেন করুন</a>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>বন্ধ করুন</button>
+      <button class="btn btn-primary" id="viewPopSaveBtn" style="display:none;">💾 সংরক্ষণ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Photo gallery popup ===== -->
+<div class="overlay" id="photoPopOverlay">
+  <div class="modal photo-modal">
+    <div class="modal-head"><h3>ছবি <span id="photoPopCounter" style="font-size:12px;color:var(--muted);font-weight:400;"></span></h3><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body" style="display:block;">
+      <div class="photo-pop-body" style="position:relative;">
+        <button type="button" class="btn btn-ghost photo-nav-btn" id="photoPopPrev" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);z-index:2;">‹</button>
+        <img id="photoPopImg" src="" alt="photo" style="max-width:100%;max-height:100%;object-fit:contain;">
+        <div id="photoPopEmpty" style="display:none;text-align:center;padding:30px;color:var(--muted);">কোনো ছবি নেই — নিচে থেকে যুক্ত করুন</div>
+        <button type="button" class="btn btn-ghost photo-nav-btn" id="photoPopNext" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:2;">›</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px;">
+        <label class="btn btn-ghost" style="cursor:pointer;margin:0;">➕ ছবি যুক্ত করুন<input type="file" id="photoPopAddInput" accept="image/*" multiple style="display:none;"></label>
+        <button type="button" class="btn btn-ghost" id="photoPopDeleteBtn">🗑️ এই ছবি ডিলিট করুন</button>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>বন্ধ করুন</button><button class="btn btn-primary" id="photoPopSaveBtn">💾 সংরক্ষণ করুন</button></div>
+  </div>
+</div>
+
+<!-- ===== Settings Modal ===== -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3>সেটিংস</h3><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body">
+      <div class="field full">
+        <label>থিম বাছাই করুন</label>
+        <div class="theme-grid">
+          <div class="theme-swatch" data-theme="dark"><div class="swatch-dot" style="background:#1a1d24;border:1px solid #4f8cff"></div>হালকা ডার্ক</div>
+          <div class="theme-swatch" data-theme="light"><div class="swatch-dot" style="background:#f6f6f4;border:1px solid #4a56e2"></div>হালকা লাইট</div>
+          <div class="theme-swatch" data-theme="navy"><div class="swatch-dot" style="background:linear-gradient(135deg,#3b3277,#8a5cf6)"></div>নেভি-বেগুনি</div>
+          <div class="theme-swatch" data-theme="sky"><div class="swatch-dot" style="background:#eaf6fd;border:1px solid #0ea5e9"></div>আকাশী</div>
+          <div class="theme-swatch" data-theme="aurora"><div class="swatch-dot" style="background:linear-gradient(135deg,#b34fff,#ff5ec4)"></div>অরোরা (বেগুনি-গোলাপি)</div>
+        </div>
+      </div>
+      <div class="field full"><label>Google Apps Script Web App URL (প্রধান)</label><input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec"></div>
+      <div class="conn-status pending" id="connStatus">এখনো টেস্ট করা হয়নি</div>
+      <div class="hint">একই URL তিনটি কার্ডের ডেটাই সিঙ্ক করবে (আলাদা শিটে)। প্রথমবার ডেটা পাঠানোর সময় Google Sheet-এর ১ম থেকে ৫ম রো ফাঁকা রেখে ৬ষ্ঠ রো থেকে হেডার ও ৭ম রো থেকে ডেটা এন্ট্রি শুরু হবে এবং একটি ফিল্টার টেবিল তৈরি হয়ে যাবে। সাইন ইন/সাইন আপ ও ডাটা পড়া (sync) সবসময় এই প্রধান URL থেকেই হয়।</div>
+
+      <div class="field full" style="margin-top:6px;border-top:1px solid var(--border);padding-top:14px;">
+        <label>🗂️ Google Drive ব্যাকআপ ফোল্ডারের নাম <span style="color:var(--danger);">*আবশ্যক</span></label>
+        <input type="text" id="driveFolderName" placeholder="যেমন: FileVaultBackup" required>
+        <div class="hint" style="margin-top:6px;">এই নামে একটা ফোল্ডার Google Drive-এ (প্রধান ও প্রতিটা ব্যাকআপ লিংকের একাউন্টেই আলাদাভাবে) নিজে থেকে তৈরি হয়ে যাবে — Google Sheet ফাইলটা থাকবে সরাসরি এই ফোল্ডারে, আর এর ভেতরে "Photos" নামে একটা সাব-ফোল্ডারে সব ছবি জমা হবে। এই ঘরটা খালি রাখা যাবে না।</div>
+      </div>
+      <div class="field full" style="margin-top:6px;border-top:1px solid var(--border);padding-top:14px;">
+        <label>📎 অতিরিক্ত ব্যাকআপ Google Sheet লিংক (ঐচ্ছিক)</label>
+        <div class="hint" style="margin:4px 0 10px;">এখানে যত লিংক যুক্ত করবেন, প্রতিটা এন্ট্রি/এডিট/ডিলিট সেই সবগুলো Google Sheet-এও সাথে সাথে পাঠানো হবে — প্রতিটাই সমান/আসল সিট (শুধু ব্যাকআপ কপি নয়)। এখানে <b>ঠিক একই Code.gs</b> ব্যবহার করবেন যেটা প্রধান লিংকে ব্যবহার করেছেন (অন্য একটা Google একাউন্টে/স্প্রেডশিটে ডিপ্লয় করে সেই URL এখানে বসাবেন) — আলাদা কোনো সংস্করণ লাগবে না। URL বসিয়ে সেভ করলে এই একাউন্টটা (আপনার ইউজার আইডি/পাসওয়ার্ড দিয়ে) সেই লিংকেও নিজে থেকেই তৈরি হয়ে যাবে, আলাদা করে সেখানে গিয়ে সাইন আপ করতে হবে না। ডাটা <b>পড়া</b> (sync/read) সবসময় উপরের প্রধান URL থেকেই হয়। এই লিংকগুলো <b>এই একাউন্টের জন্যই আলাদা</b> — অন্য কেউ সাইন ইন করলে তার নিজের লিংক দিতে হবে।</div>
+        <div id="extraLinksList"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+          <button class="btn btn-ghost" id="addExtraLinkBtn" type="button">➕ আরেকটা ব্যাকআপ লিংক যুক্ত করুন</button>
+          <button class="btn btn-ghost" id="testAllLinksBtn" type="button">🔌 সব লিংক টেস্ট করুন</button>
+        </div>
+        <div id="linkTestResults" style="margin-top:8px;"></div>
+      </div>
+      <div class="settings-btn-row">
+        <button class="btn btn-ghost" id="testConnBtn">🔌 কানেকশন টেস্ট করুন</button>
+        <button class="btn btn-primary" id="saveSettingsBtn">💾 সংরক্ষণ করুন</button>
+        <button class="btn btn-ghost" id="sendAllBtn">⬆️ সব ডাটা পাঠান</button>
+        <button class="btn btn-ghost" id="pullAllBtn">⬇️ সিট থেকে ডাটা আনুন</button>
+      </div>
+      <div class="settings-btn-row">
+        <button class="btn btn-ghost" id="backupBtn">📦 JSON ডাউনলোড ব্যাকআপ</button>
+        <button class="btn btn-ghost" id="restoreBtn">♻️ রিস্টোর</button>
+        <input type="file" id="restoreInput" accept="application/json" style="display:none;">
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>বন্ধ করুন</button></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   GLOBAL: theme + settings + sidebar + jsonp helper + popups
+   ============================================================ */
+const SETTINGS_KEY = 'fileVaultSettings';
+let settings = { theme: 'dark', scriptUrl: '', driveFolderName: '' };
+const MARK_COLORS = ['#ff5d6c','#ffb020','#f4d35e','#3ecf8e','#4f8cff','#7c5cff','#ff7ad9'];
+
+function loadSettings(){
+  try{ settings = Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); }catch(e){}
+  document.documentElement.setAttribute('data-theme', settings.theme);
+  document.getElementById('scriptUrl').value = settings.scriptUrl || '';
+  document.getElementById('driveFolderName').value = settings.driveFolderName || '';
+}
+function saveSettingsToStorage(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function fmtDate(iso){
+  if(!iso) return '-';
+  const d = new Date(iso+'T00:00:00');
+  if(isNaN(d.getTime())) return escapeHtml(iso);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+}
+
+function buildFileUri(loc){
+  if(!loc) return '#';
+  let p = loc.trim().replace(/\\/g,'/');
+  if(!/^[a-zA-Z]+:\/\//.test(p)){
+    if(/^[a-zA-Z]:\//.test(p)) p = 'file:///' + p;
+    else p = 'file://' + (p.startsWith('/') ? p : '/' + p);
+  }
+  return p;
+}
+
+let viewPopState = null; // {sheet, id, field} — set only when the popup is editable
+function showViewPopup(title, text, locationLink, editable){
+  document.getElementById('viewPopTitle').textContent = title;
+  const displayEl = document.getElementById('viewPopText');
+  const editEl = document.getElementById('viewPopEditText');
+  const saveBtn = document.getElementById('viewPopSaveBtn');
+  if(editable){
+    displayEl.style.display = 'none';
+    editEl.style.display = 'block';
+    editEl.value = text || '';
+    saveBtn.style.display = 'inline-flex';
+    viewPopState = editable;
+  } else {
+    displayEl.style.display = 'block';
+    editEl.style.display = 'none';
+    displayEl.textContent = text || '(কিছু লেখা নেই)';
+    saveBtn.style.display = 'none';
+    viewPopState = null;
+  }
+  const link = document.getElementById('viewPopLink');
+  if(locationLink){ link.style.display='inline-flex'; link.href = buildFileUri(locationLink); }
+  else { link.style.display='none'; }
+  document.getElementById('viewPopOverlay').classList.add('active');
+}
+document.getElementById('viewPopSaveBtn').addEventListener('click', ()=>{
+  if(!viewPopState) return;
+  updateRecordField(viewPopState.sheet, viewPopState.id, viewPopState.field, document.getElementById('viewPopEditText').value);
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
+});
+
+/* ---------- shared per-sheet helpers (used by note-popup and photo-gallery) ---------- */
+function getArrayForSheet(sheet){
+  if(sheet==='files') return files;
+  if(sheet==='automation') return automationData;
+  if(sheet==='email') return emailData;
+  if(sheet==='passwordNote') return passwordNoteData;
+  return [];
+}
+function persistForSheet(sheet){
+  if(sheet==='files'){ persistLocal(); render(); }
+  if(sheet==='automation'){ persistAuto(); renderAuto(); }
+  if(sheet==='email'){ persistEmail(); renderEmail(); }
+  if(sheet==='passwordNote'){ persistPasswordNote(); renderPasswordNote(); }
+}
+function updateRecordField(sheet, id, field, value){
+  const rec = getArrayForSheet(sheet).find(r=>r.id===id);
+  if(!rec) return;
+  rec[field] = value;
+  persistForSheet(sheet);
+  syncToSheet('update', rec, sheet);
+}
+
+/* ---------- photo gallery popup (multi-photo: view/add/delete/save) ---------- */
+let galleryState = null; // {sheet, id, photos:[...], index}
+function openGallery(sheet, id){
+  const rec = getArrayForSheet(sheet).find(r=>r.id===id);
+  if(!rec) return;
+  galleryState = { sheet, id, photos: (rec.photos||[]).slice(), index: 0 };
+  renderGallery();
+  document.getElementById('photoPopOverlay').classList.add('active');
+}
+function renderGallery(){
+  if(!galleryState) return;
+  const img = document.getElementById('photoPopImg');
+  const empty = document.getElementById('photoPopEmpty');
+  const counter = document.getElementById('photoPopCounter');
+  const prevBtn = document.getElementById('photoPopPrev');
+  const nextBtn = document.getElementById('photoPopNext');
+  const delBtn = document.getElementById('photoPopDeleteBtn');
+  const photos = galleryState.photos;
+  if(photos.length === 0){
+    img.style.display = 'none'; empty.style.display = 'block'; counter.textContent = '';
+    prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; delBtn.style.display = 'none';
+    return;
+  }
+  if(galleryState.index >= photos.length) galleryState.index = photos.length - 1;
+  if(galleryState.index < 0) galleryState.index = 0;
+  img.style.display = 'block'; empty.style.display = 'none';
+  img.src = photos[galleryState.index];
+  counter.textContent = (galleryState.index+1) + ' / ' + photos.length;
+  const multi = photos.length > 1;
+  prevBtn.style.display = multi ? 'inline-flex' : 'none';
+  nextBtn.style.display = multi ? 'inline-flex' : 'none';
+  delBtn.style.display = 'inline-flex';
+}
+document.getElementById('photoPopPrev').addEventListener('click', ()=>{
+  if(!galleryState || !galleryState.photos.length) return;
+  galleryState.index = (galleryState.index - 1 + galleryState.photos.length) % galleryState.photos.length;
+  renderGallery();
+});
+document.getElementById('photoPopNext').addEventListener('click', ()=>{
+  if(!galleryState || !galleryState.photos.length) return;
+  galleryState.index = (galleryState.index + 1) % galleryState.photos.length;
+  renderGallery();
+});
+document.getElementById('photoPopDeleteBtn').addEventListener('click', ()=>{
+  if(!galleryState || !galleryState.photos.length) return;
+  galleryState.photos.splice(galleryState.index, 1);
+  renderGallery();
+});
+document.getElementById('photoPopAddInput').addEventListener('change', (e)=>{
+  if(!galleryState) return;
+  const chosen = Array.from(e.target.files || []);
+  chosen.forEach(file=>{
+    resizeImageFile(file, 1250, 800, (dataUrl)=>{
+      if(!galleryState) return;
+      galleryState.photos.push(dataUrl);
+      galleryState.index = galleryState.photos.length - 1;
+      renderGallery();
+    });
+  });
+  e.target.value = '';
+});
+/* সেভ করার সাথে সাথে ছবিগুলো ব্রাউজারে নিশ্চিতভাবে থেকে যায় (কোনো
+ * নেটওয়ার্ক নির্ভরতা নেই); তারপর যেসব ছবি এখনো Drive-এ যায়নি সেগুলো
+ * ব্যাকগ্রাউন্ডে নিঃশব্দে আপলোড হওয়ার চেষ্টা করে — ব্যর্থ হলেও লোকাল
+ * কপি অক্ষত থাকে, কোনো পপ-আপ দেখাবে না। */
+function uploadPendingPhotos(sheet, recId){
+  if(!settings.scriptUrl || !session) return;
+  const rec = getArrayForSheet(sheet).find(r=>r.id===recId);
+  if(!rec || !Array.isArray(rec.photos)) return;
+  const pendingIdx = [];
+  rec.photos.forEach((p, i)=>{ if(p && p.indexOf('data:') === 0) pendingIdx.push(i); });
+  if(pendingIdx.length === 0) return;
+  let remaining = pendingIdx.length;
+  const finishUp = ()=>{
+    if(remaining > 0) return;
+    const live = getArrayForSheet(sheet).find(r=>r.id===recId);
+    if(live) syncToSheet('update', live, sheet);
+  };
+  pendingIdx.forEach(i=>{
+    const dataUrl = rec.photos[i];
+    postToBackend(settings.scriptUrl, {action:'uploadPhoto', image: dataUrl, id: recId + '_' + i, folder: settings.driveFolderName || '', user: session.userId, passHash: session.passHash}, (res)=>{
+      if(res && res.status === 'ok' && res.url){
+        const live = getArrayForSheet(sheet).find(r=>r.id===recId);
+        if(live && live.photos && live.photos[i] === dataUrl){
+          live.photos[i] = res.url;
+          persistForSheet(sheet);
+        }
+      }
+      remaining--; finishUp();
+    }, ()=>{ remaining--; finishUp(); });
+  });
+}
+document.getElementById('photoPopSaveBtn').addEventListener('click', ()=>{
+  if(!galleryState) return;
+  const { sheet, id, photos } = galleryState;
+  const rec = getArrayForSheet(sheet).find(r=>r.id===id);
+  if(rec){
+    rec.photos = photos.slice();
+    persistForSheet(sheet);
+    syncToSheet('update', rec, sheet);
+    uploadPendingPhotos(sheet, id);
+  }
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
+  galleryState = null;
+});
+
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', ()=>{
+  document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
+}));
+
+/* Event delegation for click-to-popup cells (safe against quotes/newlines in data) */
+document.addEventListener('click', (e)=>{
+  const el = e.target.closest('.clickable[data-popup-title]');
+  if(el){
+    const editable = el.dataset.popupEditable ? { sheet: el.dataset.popupSheet, id: el.dataset.popupId, field: el.dataset.popupEditable } : null;
+    showViewPopup(el.dataset.popupTitle, el.dataset.popupText || '', el.dataset.popupLink || null, editable);
+  }
+  const ph = e.target.closest('.photo-thumb, .photo-thumb-empty');
+  if(ph){ openGallery(ph.dataset.sheet, ph.dataset.id); }
+});
+
+/* ---------- Mark/color popover (shared across all tables) ---------- */
+let activeMarkMenu = null;
+function closeMarkMenu(){ if(activeMarkMenu){ activeMarkMenu.remove(); activeMarkMenu=null; } }
+document.addEventListener('click', (e)=>{
+  if(activeMarkMenu && !activeMarkMenu.contains(e.target) && !e.target.closest('.mark-btn')) closeMarkMenu();
+});
+function openMarkMenu(btn, onPick){
+  closeMarkMenu();
+  const menu = document.createElement('div');
+  menu.className = 'mark-menu';
+  menu.innerHTML = MARK_COLORS.map(c=>`<button class="mark-swatch" type="button" style="background:${c}" data-color="${c}"></button>`).join('') + `<button class="mark-cancel" type="button" data-color="">✕</button>`;
+  document.body.appendChild(menu);
+  const rect = btn.getBoundingClientRect();
+  menu.style.top = (rect.bottom+6)+'px';
+  menu.style.left = Math.max(6, Math.min(rect.left, window.innerWidth-184))+'px';
+  menu.addEventListener('click', (e2)=>{
+    const sw = e2.target.closest('[data-color]'); if(!sw) return;
+    onPick(sw.dataset.color);
+    closeMarkMenu();
+  });
+  activeMarkMenu = menu;
+}
+function rowStyleAttr(color){ return color ? ` style="background:${color}22;"` : ''; }
+
+/* ---------- Sidebar navigation ---------- */
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-' + item.dataset.view).classList.add('active');
+  });
+});
+const sidebar = document.getElementById('sidebar');
+document.getElementById('toggleSideBtn').addEventListener('click', ()=>{
+  sidebar.classList.toggle('collapsed');
+  document.getElementById('toggleSideLabel').textContent = sidebar.classList.contains('collapsed') ? '' : 'সাইডবার লুকান';
+});
+
+/* ---------- Settings modal (shared, opened from any view) ---------- */
+const settingsOverlay = document.getElementById('settingsOverlay');
+['settingsBtn','settingsBtn2','settingsBtn3','settingsBtn4','settingsBtn5'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('click', ()=>{
+    document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.toggle('active', s.dataset.theme === settings.theme));
+    settingsOverlay.classList.add('active');
+  });
+});
+document.querySelectorAll('.theme-swatch').forEach(s=>{
+  s.addEventListener('click', ()=>{
+    document.querySelectorAll('.theme-swatch').forEach(x=>x.classList.remove('active'));
+    s.classList.add('active');
+    document.documentElement.setAttribute('data-theme', s.dataset.theme);
+  });
+});
+document.getElementById('saveSettingsBtn').addEventListener('click', ()=>{
+  const statusEl = document.getElementById('connStatus');
+  const folderName = document.getElementById('driveFolderName').value.trim();
+  if(!folderName){
+    statusEl.className = 'conn-status bad'; statusEl.textContent = '⚠️ Drive ব্যাকআপ ফোল্ডারের নাম আবশ্যক — খালি রাখা যাবে না।';
+    document.getElementById('driveFolderName').focus();
+    return;
+  }
+  const active = document.querySelector('.theme-swatch.active');
+  settings.theme = active ? active.dataset.theme : settings.theme;
+  settings.scriptUrl = document.getElementById('scriptUrl').value.trim();
+  settings.driveFolderName = folderName;
+  saveSettingsToStorage();
+  statusEl.className = 'conn-status ok'; statusEl.textContent = '✅ সেটিংস সংরক্ষণ করা হয়েছে।';
+  // ফোল্ডারের নাম সেভ করার প্রতিবারই (বদলাক বা না বদলাক) Google Sheet
+  // ফাইলটাকে সেই ফোল্ডারে সরিয়ে নেওয়ার অনুরোধ পাঠানো হয় — প্রধান লিংক ও
+  // প্রতিটা ব্যাকআপ লিংকে আলাদাভাবে, যাতে নতুন যুক্ত হওয়া কোনো লিংকও বাদ না যায়।
+  if(session) testAllLinks();
+});
+
+let jsonpCounter = 0;
+function jsonpRequest(baseUrl, params, onSuccess, onError){
+  const cbName = 'jsonpCb_' + (jsonpCounter++);
+  const script = document.createElement('script');
+  const authParams = session ? {user: session.userId, passHash: session.passHash} : {};
+  const qs = new URLSearchParams(Object.assign({}, authParams, params, {callback: cbName})).toString();
+  window[cbName] = (data)=>{ onSuccess(data); delete window[cbName]; script.remove(); };
+  script.onerror = ()=>{ onError && onError(); delete window[cbName]; script.remove(); };
+  script.src = baseUrl + (baseUrl.includes('?') ? '&' : '?') + qs;
+  document.body.appendChild(script);
+  setTimeout(()=>{ if(window[cbName]){ onError && onError(); delete window[cbName]; script.remove(); } }, 15000);
+}
+/* POST (used only for photo uploads — GET/JSONP can't carry a large
+   base64 image in a URL). text/plain avoids a CORS preflight that the
+   Apps Script web app doesn't answer; doPost parses the body as JSON
+   regardless of the declared content-type. */
+function postToBackend(url, payload, onSuccess, onError){
+  fetch(url, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(payload) })
+    .then(r=>r.json()).then(onSuccess).catch(()=>{ onError && onError(); });
+}
+/* প্রতিটি একাউন্টের লোকাল ক্যাশ (files/automation/email/maker) আলাদা রাখা হয়
+   userId দিয়ে — তাই একই ব্রাউজারে একাধিক একাউন্ট ব্যবহার করলে একজনের ডাটা
+   আরেকজনের সাথে মিশে যায় না, আর একই একাউন্ট সাইন আউট করে আবার সাইন ইন করলে
+   তার নিজের ক্যাশ করা ডাটা (যেমন এখনো Drive-এ যায়নি এমন ছবি) ঠিক থেকেই যায়। */
+function uKey(base){ return base + ':' + (session && session.userId ? session.userId : 'anon'); }
+
+/* ---------- extra backup Google Sheet links (per-account) ----------
+ * Each signed-in account can list extra Apps Script Web App URLs (their
+ * own other Google accounts/sheets). Every write (add/update/delete)
+ * gets mirrored to all of them, fire-and-forget — reading/login always
+ * stays on the single primary URL above, so there's never a question of
+ * which copy is the "real" data. */
+let extraLinks = [];
+function extraLinksKey(){ return uKey('fileVaultExtraLinks'); }
+function loadExtraLinks(){ try{ extraLinks = JSON.parse(localStorage.getItem(extraLinksKey())||'[]'); }catch(e){ extraLinks = []; } renderExtraLinks(); }
+function saveExtraLinksToStorage(){ localStorage.setItem(extraLinksKey(), JSON.stringify(extraLinks)); }
+/* এক্সট্রা লিংকেও এখন সেই একই মূল multi-user Code.gs ডিপ্লয় করা হবে
+ * (আলাদা কোনো "backup-link" ভার্সন লাগবে না) — তাই সেই লিংকেও লগইন/সাইনআপ
+ * যাচাই লাগবে। এখানে URL বসানোর সাথে সাথেই বর্তমান একাউন্ট (userId,
+ * পাসওয়ার্ড, নাম, ইমেইল) দিয়ে ওই লিংকে চুপচাপ লগইন চেষ্টা করা হয়; না
+ * থাকলে ঠিক একই তথ্য দিয়ে সাইন আপ করিয়ে দেওয়া হয় — ফলে দ্বিতীয় একাউন্টে
+ * গিয়ে আলাদা করে সাইন আপ করার প্রয়োজন পড়ে না, শুধু লিংকটা বসিয়ে দিলেই হয়।*/
+function ensureAccountOnExtraLink(url, statusEl, labelPrefix){
+  if(!url || !session) return;
+  const setMsg = (m, err)=>{
+    if(!statusEl) return;
+    statusEl.textContent = (labelPrefix || '') + m;
+    statusEl.style.color = err ? 'var(--danger)' : 'var(--good)';
+  };
+  const afterConnected = ()=>{
+    // যেই মুহূর্তে লিংকটা কনফার্ম হয় (লগইন/সাইনআপ সফল), সাথে সাথেই
+    // ফোল্ডার-সেটআপ কমান্ডও পাঠানো হয় — এই লিংক নতুন যুক্ত হলে বা
+    // আগে ফোল্ডার-নাম পাল্টানোর সময় এই লিংকটা ছিল না, দুই ক্ষেত্রেই কাজ করবে।
+    if(settings.driveFolderName){
+      jsonpRequest(url, {action:'setDriveFolder', folderName: settings.driveFolderName}, ()=>{}, ()=>{});
+    }
+  };
+  setMsg('⏳ একাউন্ট যাচাই করা হচ্ছে...', false);
+  jsonpRequest(url, {action:'login', userId: session.userId, passHash: session.passHash}, (res)=>{
+    if(res && res.status === 'ok'){ setMsg('✅ একাউন্ট পাওয়া গেছে — ডাটা যাবে', false); afterConnected(); return; }
+    jsonpRequest(url, {action:'signup', fullName: session.fullName || session.userId, userId: session.userId, email: session.email || '', passHash: session.passHash}, (res2)=>{
+      if(res2 && res2.status === 'ok'){ setMsg('✅ এই লিংকে একাউন্ট তৈরি হয়েছে — ডাটা যাবে', false); afterConnected(); }
+      else{ setMsg('⚠️ একাউন্ট তৈরি করা যায়নি: ' + ((res2 && res2.message) || 'অজানা সমস্যা'), true); }
+    }, ()=>{ setMsg('⚠️ সংযোগ ব্যর্থ — URL/ডিপ্লয়মেন্ট এক্সেস চেক করুন', true); });
+  }, ()=>{ setMsg('⚠️ সংযোগ ব্যর্থ — URL/ডিপ্লয়মেন্ট এক্সেস চেক করুন', true); });
+}
+/* সেভ/টেস্ট বাটনে ক্লিক করলে প্রধান লিংক + প্রতিটা ব্যাকআপ লিংক আলাদা
+ * আলাদা লাইনে দেখাবে — কোনটা সংযুক্ত হয়েছে, কোনটায় সমস্যা, স্পষ্টভাবে। */
+function testAllLinks(){
+  const results = document.getElementById('linkTestResults');
+  results.innerHTML = '';
+  function addLine(label){
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:3px 0;font-size:12.5px;color:var(--muted);';
+    div.textContent = '🔗 ' + label + ': ⏳ চেক করা হচ্ছে...';
+    results.appendChild(div);
+    return div;
+  }
+  if(settings.scriptUrl){
+    const line = addLine('প্রধান লিংক');
+    jsonpRequest(settings.scriptUrl, {action:'test'}, (res)=>{
+      const ok = res && res.status === 'ok';
+      line.textContent = '🔗 প্রধান লিংক: ' + (ok ? '✅ সংযুক্ত' : '⚠️ ব্যর্থ');
+      line.style.color = ok ? 'var(--good)' : 'var(--danger)';
+      if(ok && settings.driveFolderName) jsonpRequest(settings.scriptUrl, {action:'setDriveFolder', folderName: settings.driveFolderName}, ()=>{}, ()=>{});
+    }, ()=>{ line.textContent = '🔗 প্রধান লিংক: ⚠️ সংযোগ ব্যর্থ'; line.style.color = 'var(--danger)'; });
+  } else {
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:3px 0;font-size:12.5px;color:var(--danger);';
+    div.textContent = '🔗 প্রধান লিংক: ⚠️ URL সেট করা নেই';
+    results.appendChild(div);
+  }
+  extraLinks.forEach((link, idx)=>{
+    if(!link.url) return;
+    const label = link.label || ('ব্যাকআপ ' + (idx+1));
+    const line = addLine(label);
+    ensureAccountOnExtraLink(link.url, line, '🔗 ' + label + ': ');
+  });
+  if(extraLinks.filter(l=>l.url).length === 0){
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:3px 0;font-size:12.5px;color:var(--muted);';
+    div.textContent = 'কোনো ব্যাকআপ লিংক যুক্ত করা নেই।';
+    results.appendChild(div);
+  }
+}
+document.getElementById('testAllLinksBtn').addEventListener('click', testAllLinks);
+function renderExtraLinks(){
+  const wrap = document.getElementById('extraLinksList');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  extraLinks.forEach((item, idx)=>{
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;';
+    const labelInput = document.createElement('input');
+    labelInput.type = 'text'; labelInput.placeholder = 'নাম'; labelInput.value = item.label || '';
+    labelInput.style.cssText = 'flex:0 0 90px;';
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text'; urlInput.placeholder = 'https://script.google.com/macros/s/.../exec'; urlInput.value = item.url || '';
+    urlInput.style.cssText = 'flex:1;min-width:180px;';
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn btn-ghost'; removeBtn.type = 'button'; removeBtn.textContent = '✕';
+    removeBtn.style.cssText = 'padding:8px 12px;flex:0 0 auto;';
+    const statusEl = document.createElement('small');
+    statusEl.style.cssText = 'flex:1 0 100%;color:var(--muted);';
+    statusEl.textContent = item.url ? '' : 'URL বসিয়ে সেভ করুন — এই একাউন্টটা এখানেও নিজে থেকেই তৈরি হয়ে যাবে';
+    labelInput.addEventListener('input', ()=>{ extraLinks[idx].label = labelInput.value; saveExtraLinksToStorage(); });
+    urlInput.addEventListener('input', ()=>{ extraLinks[idx].url = urlInput.value.trim(); saveExtraLinksToStorage(); });
+    urlInput.addEventListener('change', ()=>{
+      const url = urlInput.value.trim();
+      extraLinks[idx].url = url; saveExtraLinksToStorage();
+      if(url) ensureAccountOnExtraLink(url, statusEl);
+    });
+    removeBtn.addEventListener('click', ()=>{ extraLinks.splice(idx,1); saveExtraLinksToStorage(); renderExtraLinks(); });
+    row.appendChild(labelInput); row.appendChild(urlInput); row.appendChild(removeBtn); row.appendChild(statusEl);
+    wrap.appendChild(row);
+  });
+}
+document.getElementById('addExtraLinkBtn').addEventListener('click', ()=>{
+  extraLinks.push({ label: 'ব্যাকআপ ' + (extraLinks.length + 1), url: '' });
+  saveExtraLinksToStorage();
+  renderExtraLinks();
+});
+const SYNC_STATUS_EL = { files:'syncStatus', automation:'autoSyncStatus', email:'emailSyncStatus', passwordNote:'pwSyncStatus' };
+function setSyncStatus(sheet, text, isError){
+  const el = document.getElementById(SYNC_STATUS_EL[sheet]);
+  if(!el) return;
+  el.textContent = text;
+  el.style.color = isError ? 'var(--danger)' : '';
+}
+/* একটা write (add/update/delete) প্রধান URL-এ পাঠায়, আর প্রতিটা
+ * অতিরিক্ত ব্যাকআপ লিংকেও নিঃশব্দে (fire-and-forget) পাঠিয়ে দেয় —
+ * কোনো একটা ব্যর্থ হলেও বাকিগুলো/মূল সেভ আটকায় না। প্রধান লিংকের
+ * ফলাফল (সফল/ব্যর্থ, কারণ সহ) কার্ডের উপরে সবসময় দেখানো হয় —
+ * আগে এটা নিঃশব্দে ব্যর্থ হতো, বোঝা যেত না সিঙ্ক আসলে হচ্ছে কিনা। */
+function broadcastWrite(action, sheet, payload){
+  if(settings.scriptUrl){
+    setSyncStatus(sheet, '⏳ Google Sheet-এ পাঠানো হচ্ছে...', false);
+    jsonpRequest(settings.scriptUrl, {action, sheet, data: JSON.stringify(payload)}, (res)=>{
+      if(res && res.status === 'ok'){
+        setSyncStatus(sheet, '✅ Sheet-এ সিঙ্ক হয়েছে (' + new Date().toLocaleTimeString('bn-BD') + ')', false);
+      } else {
+        setSyncStatus(sheet, '⚠️ সিঙ্ক ব্যর্থ: ' + (res && res.message ? res.message : 'অজানা সমস্যা') + ' (ডাটা ব্রাউজারে সেভ আছে)', true);
+      }
+    }, ()=>{
+      setSyncStatus(sheet, '⚠️ সংযোগ ব্যর্থ — URL/ইন্টারনেট চেক করুন (ডাটা ব্রাউজারে সেভ আছে)', true);
+    });
+  } else {
+    setSyncStatus(sheet, 'লোকাল ক্যাশ (Google Sheet URL সেট করা হয়নি)', false);
+  }
+  extraLinks.forEach(link=>{
+    if(link.url) jsonpRequest(link.url, {action, sheet, data: JSON.stringify(payload)}, ()=>{}, ()=>{});
+  });
+}
+
+function runSequential(tasks, onEach, onDone){
+  let i = 0;
+  function next(){
+    if(i>=tasks.length){ onDone(); return; }
+    const t = tasks[i++];
+    onEach(t, next);
+  }
+  next();
+}
+function setupSearchClear(inputId, btnId, extraFieldIds, onClear){
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  const box = input.closest('.search-box');
+  function refresh(){ box.classList.toggle('has-text', input.value.length>0); }
+  input.addEventListener('input', refresh);
+  btn.addEventListener('click', ()=>{
+    input.value='';
+    (extraFieldIds||[]).forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    refresh();
+    if(onClear) onClear();
+    input.focus();
+  });
+  refresh();
+}
+
+document.getElementById('testConnBtn').addEventListener('click', ()=>{
+  const url = document.getElementById('scriptUrl').value.trim();
+  const statusEl = document.getElementById('connStatus');
+  if(!url){ statusEl.className='conn-status bad'; statusEl.textContent='URL দিন প্রথমে'; return; }
+  statusEl.className = 'conn-status pending'; statusEl.textContent = 'টেস্ট চলছে...';
+  jsonpRequest(url, {action:'test'}, (res)=>{
+    if(res && res.status === 'ok'){ statusEl.className='conn-status ok'; statusEl.textContent='✅ কানেকশন সফল! Google Sheet-এর সাথে যুক্ত।'; }
+    else { statusEl.className='conn-status bad'; statusEl.textContent='❌ কানেকশন ব্যর্থ। Apps Script URL ও ডিপ্লয়মেন্ট চেক করুন।'; }
+  }, ()=>{ statusEl.className='conn-status bad'; statusEl.textContent='❌ সংযোগ করা যায়নি।'; });
+  // এই বাটন শুধু প্রধান লিংক টেস্ট করত — এখন প্রতিটা ব্যাকআপ লিংকও আলাদাভাবে
+  // (নিচে "সব লিংক টেস্ট করুন" অংশে) একসাথে দেখানো হচ্ছে, যাতে কোন লিংকে
+  // সমস্যা সেটা এক ক্লিকেই বোঝা যায়।
+  if(session) testAllLinks();
+});
+
+/* সব ডাটা পাঠান — একটির পর একটি ধারাবাহিকভাবে পাঠানো হয় (একসাথে সব পাঠালে কিছু ডাটা হারিয়ে যাচ্ছিল) */
+document.getElementById('sendAllBtn').addEventListener('click', ()=>{
+  const statusEl = document.getElementById('connStatus');
+  if(!settings.scriptUrl){ statusEl.className='conn-status bad'; statusEl.textContent='আগে Apps Script URL সেভ করুন।'; return; }
+  const tasks = [
+    ...files.map(r=>({sheet:'files', r:sheetSafeRecord(r)})),
+    ...automationData.map(r=>({sheet:'automation', r:sheetSafeRecord(r)})),
+    ...emailData.map(r=>({sheet:'email', r:sheetSafeRecord(r)})),
+    ...passwordNoteData.map(r=>({sheet:'passwordNote', r:sheetSafeRecord(r)}))
+  ];
+  if(tasks.length === 0){ statusEl.className='conn-status ok'; statusEl.textContent='পাঠানোর মতো কোনো ডাটা নেই।'; return; }
+  statusEl.className='conn-status pending'; statusEl.textContent = `সব ডাটা পাঠানো হচ্ছে... (0/${tasks.length})`;
+  let done = 0;
+  runSequential(tasks, (t, next)=>{
+    extraLinks.forEach(link=>{
+      if(link.url) jsonpRequest(link.url, {action:'update', sheet:t.sheet, data:JSON.stringify(t.r)}, ()=>{}, ()=>{});
+    });
+    jsonpRequest(settings.scriptUrl, {action:'update', sheet:t.sheet, data:JSON.stringify(t.r)}, ()=>{ done++; statusEl.textContent = `সব ডাটা পাঠানো হচ্ছে... (${done}/${tasks.length})`; next(); }, ()=>{ done++; statusEl.textContent = `সব ডাটা পাঠানো হচ্ছে... (${done}/${tasks.length})`; next(); });
+  }, ()=>{ statusEl.className='conn-status ok'; statusEl.textContent='✅ সব ডাটা পাঠানো সম্পন্ন হয়েছে।'; });
+});
+
+/* সিট থেকে ডাটা আনুন (সবগুলো কার্ড) */
+document.getElementById('pullAllBtn').addEventListener('click', ()=>{
+  if(!settings.scriptUrl){ document.getElementById('connStatus').className='conn-status bad'; document.getElementById('connStatus').textContent='আগে Apps Script URL সেভ করুন।'; return; }
+  pullFromSheet('files'); pullFromSheet('automation'); pullFromSheet('email'); pullFromSheet('passwordNote');
+});
+
+/* JSON ব্যাকআপ ডাউনলোড */
+document.getElementById('backupBtn').addEventListener('click', ()=>{
+  const backup = {
+    files, automationData, emailData, passwordNoteData,
+    makerOptions: (()=>{ try{ return JSON.parse(localStorage.getItem(uKey(MAKER_KEY))||'[]'); }catch(e){ return []; } })(),
+    settings, exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'file-vault-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+
+/* রিস্টোর */
+document.getElementById('restoreBtn').addEventListener('click', ()=> document.getElementById('restoreInput').click());
+document.getElementById('restoreInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!confirm('রিস্টোর করলে বর্তমান লোকাল ডাটা প্রতিস্থাপিত হবে। আপনি কি নিশ্চিত?')){ e.target.value=''; return; }
+      files = migratePhotosArray(Array.isArray(data.files) ? data.files : []);
+      automationData = migratePhotosArray(Array.isArray(data.automationData) ? data.automationData : []);
+      emailData = Array.isArray(data.emailData) ? data.emailData : [];
+      passwordNoteData = migratePhotosArray(Array.isArray(data.passwordNoteData) ? data.passwordNoteData : []);
+      persistLocal(); persistAuto(); persistEmail(); persistPasswordNote();
+      if(Array.isArray(data.makerOptions)) localStorage.setItem(uKey(MAKER_KEY), JSON.stringify(data.makerOptions));
+      if(data.settings){
+        settings = Object.assign(settings, data.settings);
+        saveSettingsToStorage();
+        document.documentElement.setAttribute('data-theme', settings.theme);
+        document.getElementById('scriptUrl').value = settings.scriptUrl || '';
+      }
+      render(); renderAuto(); refreshMakerList(); renderEmail(); renderPasswordNote();
+      alert('রিস্টোর সম্পন্ন হয়েছে।');
+    }catch(err){ alert('ফাইল পড়তে সমস্যা হয়েছে। সঠিক ব্যাকআপ ফাইল দিন।'); }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+});
+
+function countPhotos(arr){ return (arr||[]).reduce((s,r)=> s + ((r.photos||[]).length), 0); }
+function updateDashboard(){
+  document.getElementById('dashFileCount').textContent = files.length;
+  document.getElementById('dashAutoCount').textContent = automationData.length;
+  document.getElementById('dashEmailCount').textContent = emailData.length;
+  document.getElementById('dashPwCount').textContent = passwordNoteData.length;
+  const totalMb = files.reduce((s,f)=>s + (Number(f.size)||0), 0);
+  document.getElementById('dashTotalSize').textContent = fmtSize(totalMb);
+
+  const filePhotos = countPhotos(files), autoPhotos = countPhotos(automationData), pwPhotos = countPhotos(passwordNoteData);
+  document.getElementById('dashTotalPhotos').textContent = filePhotos + autoPhotos + pwPhotos;
+
+  const setStat = (id, entries, photos)=>{ const el = document.getElementById(id); if(el) el.textContent = `এন্ট্রি: ${entries} | ছবি: ${photos}`; };
+  setStat('filesStatsLine', files.length, filePhotos);
+  setStat('autoStatsLine', automationData.length, autoPhotos);
+  setStat('emailStatsLine', emailData.length, 0);
+  setStat('pwStatsLine', passwordNoteData.length, pwPhotos);
+}
+function fmtSize(mb){
+  if(mb === undefined || mb === null || mb === '') return '-';
+  const n = Number(mb);
+  if(n >= 1024) return (n/1024).toFixed(2) + ' GB';
+  return n.toFixed(2) + ' MB';
+}
+
+/* ============================================================
+   CARD 2: COMPUTER FILES
+   ============================================================ */
+const STORAGE_KEY = 'fileVaultData';
+let files = [];
+let sortState = { key: 'date', dir: 'desc' };
+
+function loadFiles(){ try{ files = migratePhotosArray(JSON.parse(localStorage.getItem(uKey(STORAGE_KEY)) || '[]')); }catch(e){ files = []; } render(); }
+function persistLocal(){ localStorage.setItem(uKey(STORAGE_KEY), JSON.stringify(files)); updateDashboard(); }
+function nextSL(){ return files.length ? Math.max(...files.map(f=>Number(f.sl)||0)) + 1 : 1; }
+
+function typeOptionsRefresh(){
+  const sel = document.getElementById('typeFilter');
+  const current = sel.value;
+  const types = [...new Set(files.map(f=>f.type).filter(Boolean))];
+  sel.innerHTML = '<option value="">সব ধরনের ফাইল</option>' + types.map(t=>`<option value="${t}">${t}</option>`).join('');
+  sel.value = current;
+}
+function applyFilterSort(list){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const typeF = document.getElementById('typeFilter').value;
+  const fromD = document.getElementById('fromDate').value;
+  const toD = document.getElementById('toDate').value;
+  let out = list.filter(f=>{
+    const matchesQ = !q || (f.name||'').toLowerCase().includes(q) || (f.date||'').includes(q);
+    const matchesType = !typeF || f.type === typeF;
+    const matchesFrom = !fromD || (f.date||'') >= fromD;
+    const matchesTo = !toD || (f.date||'') <= toD;
+    return matchesQ && matchesType && matchesFrom && matchesTo;
+  });
+  out.sort((a,b)=>{
+    let av, bv;
+    if(sortState.key === 'name'){ av=(a.name||'').toLowerCase(); bv=(b.name||'').toLowerCase(); }
+    else if(sortState.key === 'date'){ av=a.date||''; bv=b.date||''; }
+    else if(sortState.key === 'size'){ av=Number(a.size)||0; bv=Number(b.size)||0; }
+    else { av=Number(a.sl)||0; bv=Number(b.sl)||0; }
+    if(av < bv) return sortState.dir === 'asc' ? -1 : 1;
+    if(av > bv) return sortState.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return out;
+}
+function currentDisplaySl(id){
+  const list = applyFilterSort(files);
+  const idx = list.findIndex(x=>x.id===id);
+  return idx > -1 ? idx+1 : '';
+}
+function selectedFileIds(){ return [...document.querySelectorAll('#tableBody .rowChk:checked')].map(c=>c.dataset.id); }
+function updateFileActionButtons(){
+  const sel = selectedFileIds();
+  document.getElementById('editBtn').disabled = sel.length !== 1;
+  document.getElementById('deleteBtn').disabled = sel.length === 0;
+}
+function photoCellHtml(sheet, rec){
+  const photos = rec.photos || [];
+  if(photos.length){
+    return `<img class="photo-thumb" src="${escapeHtml(photos[0])}" data-sheet="${sheet}" data-id="${escapeHtml(rec.id)}" title="ছবি দেখুন (${photos.length}টি)">`;
+  }
+  return `<button type="button" class="photo-thumb-empty" data-sheet="${sheet}" data-id="${escapeHtml(rec.id)}" title="ছবি যুক্ত করুন">➕</button>`;
+}
+function render(){
+  typeOptionsRefresh();
+  const list = applyFilterSort(files);
+  const body = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  document.querySelectorAll('#fileTable thead th .arrow').forEach(a=>a.textContent='');
+  const activeTh = document.querySelector(`#fileTable thead th[data-key="${sortState.key}"] .arrow`);
+  if(activeTh) activeTh.textContent = sortState.dir === 'asc' ? '▲' : '▼';
+
+  if(list.length === 0){ body.innerHTML=''; empty.style.display='block'; }
+  else{
+    empty.style.display='none';
+    body.innerHTML = list.map((f,i) => `
+      <tr${rowStyleAttr(f.color)}>
+        <td><input type="checkbox" class="chk rowChk" data-id="${f.id}"></td>
+        <td><button class="mark-btn" type="button" data-id="${f.id}" style="${f.color?`background:${f.color}`:''}"></button></td>
+        <td>${i+1}</td>
+        <td class="nowrap">${fmtDate(f.date)}</td>
+        <td><span class="clickable" data-popup-title="ফাইলের নাম" data-popup-text="${escapeHtml(f.name||'')}">${escapeHtml(f.name)}</span></td>
+        <td><span class="type-badge">${escapeHtml(f.type)||'-'}</span></td>
+        <td><span class="clickable" data-popup-title="বর্ণনা" data-popup-text="${escapeHtml(f.desc||'')}">${escapeHtml(f.desc)||'-'}</span></td>
+        <td>${fmtSize(f.size)}</td>
+        <td><span class="clickable" data-popup-title="লোকেশন" data-popup-text="${escapeHtml(f.location||'')}" data-popup-link="${escapeHtml(f.location||'')}">${escapeHtml(f.location)||'-'}</span></td>
+        <td><span class="clickable" data-popup-title="নোট" data-popup-text="${escapeHtml(f.note||'')}" data-popup-sheet="files" data-popup-id="${escapeHtml(f.id)}" data-popup-editable="note">${escapeHtml(f.note)||'-'}</span></td>
+        <td>${photoCellHtml('files', f)}</td>
+      </tr>`).join('');
+  }
+  document.getElementById('statCount').textContent = files.length;
+  const totalMb = files.reduce((s,f)=>s + (Number(f.size)||0), 0);
+  document.getElementById('statSize').textContent = fmtSize(totalMb);
+  document.getElementById('statTypes').textContent = new Set(files.map(f=>f.type).filter(Boolean)).size;
+  document.getElementById('checkAllFiles').checked = false;
+  updateFileActionButtons();
+  updateDashboard();
+}
+document.getElementById('tableBody').addEventListener('change', (e)=>{ if(e.target.classList.contains('rowChk')) updateFileActionButtons(); });
+document.getElementById('tableBody').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.mark-btn'); if(!btn) return;
+  e.stopPropagation();
+  openMarkMenu(btn, (color)=>{
+    const rec = files.find(x=>x.id===btn.dataset.id); if(!rec) return;
+    rec.color = color; persistLocal(); render();
+  });
+});
+document.getElementById('checkAllFiles').addEventListener('change', (e)=>{
+  document.querySelectorAll('#tableBody .rowChk').forEach(c=>c.checked = e.target.checked);
+  updateFileActionButtons();
+});
+document.querySelectorAll('#fileTable thead th[data-key]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(sortState.key === key){ sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc'; } else { sortState.key = key; sortState.dir = 'asc'; }
+    document.getElementById('sortSelect').value = '';
+    render();
+  });
+});
+document.getElementById('sortSelect').addEventListener('change', (e)=>{ const [key,dir]=e.target.value.split('_'); if(key){ sortState={key,dir}; render(); } });
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('typeFilter').addEventListener('change', render);
+document.getElementById('fromDate').addEventListener('change', render);
+document.getElementById('toDate').addEventListener('change', render);
+
+const fileOverlay = document.getElementById('fileOverlay');
+document.getElementById('addBtn').addEventListener('click', ()=>openAddFile());
+function openAddFile(){
+  document.getElementById('modalTitle').textContent = 'নতুন ফাইল যোগ করুন';
+  document.getElementById('editId').value = '';
+  document.getElementById('f_sl').value = nextSL();
+  document.getElementById('f_date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f_name').value=''; document.getElementById('f_type').value='PDF';
+  document.getElementById('f_size').value=''; document.getElementById('f_location').value='';
+  document.getElementById('f_desc').value=''; document.getElementById('f_note').value=''; document.getElementById('f_upload').value='';
+  fileOverlay.classList.add('active');
+}
+document.getElementById('editBtn').addEventListener('click', ()=>{
+  const ids = selectedFileIds(); if(ids.length!==1) return;
+  const f = files.find(x=>x.id===ids[0]); if(!f) return;
+  document.getElementById('modalTitle').textContent = 'ফাইল এডিট করুন';
+  document.getElementById('editId').value = f.id;
+  document.getElementById('f_sl').value=currentDisplaySl(f.id); document.getElementById('f_date').value=f.date;
+  document.getElementById('f_name').value=f.name; document.getElementById('f_type').value=f.type;
+  document.getElementById('f_size').value=f.size; document.getElementById('f_location').value=f.location;
+  document.getElementById('f_desc').value=f.desc; document.getElementById('f_note').value=f.note;
+  fileOverlay.classList.add('active');
+});
+document.getElementById('deleteBtn').addEventListener('click', ()=>{
+  const ids = selectedFileIds(); if(ids.length===0) return;
+  if(!confirm(`আপনি কি নিশ্চিত ${ids.length}টি এন্ট্রি ডিলিট করতে চান?`)) return;
+  ids.forEach(id=>syncToSheet('delete', {id}, 'files'));
+  files = files.filter(f=>!ids.includes(f.id));
+  persistLocal(); render();
+});
+document.getElementById('f_upload').addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  document.getElementById('f_name').value = file.name;
+  document.getElementById('f_size').value = (file.size/(1024*1024)).toFixed(2);
+});
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('f_name').value.trim();
+  const location = document.getElementById('f_location').value.trim();
+  if(!name){ alert('ফাইলের নাম দিন'); return; }
+  if(!location){ alert('ফাইলের লোকেশন দিন'); return; }
+  const id = document.getElementById('editId').value;
+  const existing = id ? files.find(x=>x.id===id) : null;
+  const record = { id: id || 'f_'+Date.now(), sl: document.getElementById('f_sl').value, date: document.getElementById('f_date').value,
+    name, type: document.getElementById('f_type').value, size: document.getElementById('f_size').value,
+    location, desc: document.getElementById('f_desc').value, note: document.getElementById('f_note').value,
+    color: existing ? (existing.color||'') : '' };
+  if(id){ const idx=files.findIndex(x=>x.id===id); files[idx]=record; syncToSheet('update', record, 'files'); }
+  else{ files.push(record); syncToSheet('add', record, 'files'); }
+  persistLocal(); render(); fileOverlay.classList.remove('active');
+});
+/* Google Sheet কখনো একাধিক লাইনের টেক্সট (Alt+Enter / নতুন লাইন) পেলে
+   নিজে থেকেই সেই সেলের রো-হাইট বড় করে ফেলে — ওয়াইড ঠিক রেখে সেটা এড়ানো
+   সম্ভব নয়, তাই সিটে পাঠানোর আগে নতুন লাইনকে একটা " / " চিহ্ন দিয়ে বদলে
+   একলাইনে বানিয়ে দেওয়া হচ্ছে। ড্যাশবোর্ডে (লোকাল ডাটায়) আসল লেখা multi-line
+   অবস্থাতেই থেকে যায় — শুধু সিটে পাঠানো কপিটাই পরিবর্তিত হয়। */
+const PHOTO_SEP = '|||';
+function sheetSafeRecord(record){
+  const r = Object.assign({}, record);
+  ['desc','note'].forEach(k=>{ if(typeof r[k] === 'string') r[k] = r[k].replace(/\r?\n+/g, ' / '); });
+  if(Array.isArray(r.photos)){
+    // শুধু Drive-এ আপলোড হওয়া (http/https) ছবিগুলোই Sheet-এ যায় — এখনো
+    // আপলোড না-হওয়া (data:) ছবি লোকালেই থেকে যায়, পরে আপলোড সফল হলে
+    // আবার সিঙ্ক হবে (দেখুন uploadPendingPhotos)।
+    r.photo = r.photos.filter(p => p && /^https?:/i.test(p)).join(PHOTO_SEP);
+    delete r.photos;
+  }
+  return r;
+}
+function photosFromSheetValue(v){
+  return (v || '').toString().split(PHOTO_SEP).map(s=>s.trim()).filter(Boolean);
+}
+/* Sheet-এ কোনো URL না থাকলেও (এখনো Drive-এ যায়নি) লোকালে থাকা (data:)
+ * ছবিগুলো যেন হারিয়ে না যায় — merge করে রাখা হচ্ছে। */
+function mergePhotos(serverPhotos, localPhotos){
+  const pendingLocal = (localPhotos || []).filter(p => p && p.indexOf('data:') === 0);
+  return (serverPhotos || []).concat(pendingLocal);
+}
+/* পুরনো সংস্করণে single `photo` (string) ফিল্ড ছিল — লোকাল ক্যাশ থেকে
+ * লোড করার সময় সেটাকে নতুন `photos` (array) ফরম্যাটে রূপান্তর করা হচ্ছে। */
+function migratePhotosArray(arr){
+  (arr || []).forEach(r=>{
+    if(!Array.isArray(r.photos)) r.photos = (typeof r.photo === 'string' && r.photo) ? [r.photo] : [];
+    if('photo' in r) delete r.photo;
+  });
+  return arr;
+}
+function syncToSheet(action, record, sheet){
+  const payload = (action === 'delete') ? record : sheetSafeRecord(record);
+  broadcastWrite(action, sheet, payload);
+}
+document.getElementById('syncBtn').addEventListener('click', ()=>pullFromSheet('files'));
+function normalizeIncomingRecord(r, localById){
+  const rec = Object.assign({}, r);
+  const serverPhotos = photosFromSheetValue(rec.photo);
+  const localPhotos = (localById[rec.id] && localById[rec.id].photos) || [];
+  rec.photos = mergePhotos(serverPhotos, localPhotos);
+  delete rec.photo;
+  return rec;
+}
+function pullFromSheet(sheet){
+  const statusMap = { files:'syncStatus', automation:'autoSyncStatus', email:'emailSyncStatus', passwordNote:'pwSyncStatus' };
+  const statusEl = document.getElementById(statusMap[sheet]);
+  if(!settings.scriptUrl){ statusEl.textContent='লোকাল ক্যাশ (Google Sheet সেট করা হয়নি)'; return; }
+  statusEl.textContent = 'ডেটা আনা হচ্ছে...';
+  jsonpRequest(settings.scriptUrl, {action:'read', sheet}, (res)=>{
+    if(res && res.status==='ok' && Array.isArray(res.data)){
+      if(sheet==='files'){
+        const localById = {}; files.forEach(r=>{ localById[r.id]=r; });
+        files = res.data.map(r=>normalizeIncomingRecord(r, localById));
+        persistLocal(); render();
+      }
+      if(sheet==='automation'){
+        // Sheet-এ কোনো রেকর্ডের ছবি না থাকলেও (Drive আপলোড এখনো সফল হয়নি)
+        // লোকালে থাকা (data:) ছবি হারিয়ে যাবে না — merge করে রাখা হচ্ছে।
+        const localById = {}; automationData.forEach(r=>{ localById[r.id]=r; });
+        automationData = res.data.map(r=>normalizeIncomingRecord(r, localById));
+        persistAuto(); renderAuto(); refreshMakerList();
+      }
+      if(sheet==='email'){ emailData=res.data; persistEmail(); renderEmail(); }
+      if(sheet==='passwordNote'){
+        const localById = {}; passwordNoteData.forEach(r=>{ localById[r.id]=r; });
+        passwordNoteData = res.data.map(r=>normalizeIncomingRecord(r, localById));
+        persistPasswordNote(); renderPasswordNote();
+      }
+      statusEl.textContent = 'Google Sheet থেকে সিঙ্ক সম্পন্ন ✔';
+    } else { statusEl.textContent = 'সিঙ্ক ব্যর্থ, লোকাল ডেটা দেখানো হচ্ছে'; }
+  }, ()=>{ statusEl.textContent = 'সংযোগ ব্যর্থ, লোকাল ডেটা দেখানো হচ্ছে'; });
+}
+
+/* ============================================================
+   CARD 3: AUTOMATION PROJECT
+   ============================================================ */
+const AUTO_KEY = 'automationVaultData';
+const MAKER_KEY = 'automationMakerOptions';
+let automationData = [];
+let autoSortState = { key:'date', dir:'desc' };
+
+function loadAuto(){ try{ automationData = migratePhotosArray(JSON.parse(localStorage.getItem(uKey(AUTO_KEY))||'[]')); }catch(e){ automationData=[]; } refreshMakerList(); renderAuto(); }
+function persistAuto(){ localStorage.setItem(uKey(AUTO_KEY), JSON.stringify(automationData)); updateDashboard(); }
+function nextAutoSL(){ return automationData.length ? Math.max(...automationData.map(f=>Number(f.sl)||0))+1 : 1; }
+function refreshMakerList(){
+  let saved = []; try{ saved = JSON.parse(localStorage.getItem(uKey(MAKER_KEY))||'[]'); }catch(e){}
+  const fromData = automationData.map(a=>a.maker).filter(Boolean);
+  const all = [...new Set([...saved, ...fromData])];
+  localStorage.setItem(uKey(MAKER_KEY), JSON.stringify(all));
+  document.getElementById('makerList').innerHTML = all.map(m=>`<option value="${escapeHtml(m)}">`).join('');
+}
+function applyAutoFilterSort(list){
+  const q = document.getElementById('autoSearchInput').value.trim().toLowerCase();
+  const typeF = document.getElementById('autoTypeFilter').value;
+  const fromD = document.getElementById('autoFromDate').value;
+  const toD = document.getElementById('autoToDate').value;
+  let out = list.filter(f=>{
+    const matchesQ = !q || (f.name||'').toLowerCase().includes(q) || (f.date||'').includes(q) || (f.maker||'').toLowerCase().includes(q);
+    const matchesType = !typeF || f.type === typeF;
+    const matchesFrom = !fromD || (f.date||'') >= fromD;
+    const matchesTo = !toD || (f.date||'') <= toD;
+    return matchesQ && matchesType && matchesFrom && matchesTo;
+  });
+  out.sort((a,b)=>{
+    let av,bv;
+    if(autoSortState.key==='name'){ av=(a.name||'').toLowerCase(); bv=(b.name||'').toLowerCase(); }
+    else if(autoSortState.key==='date'){ av=a.date||''; bv=b.date||''; }
+    else if(autoSortState.key==='maker'){ av=(a.maker||'').toLowerCase(); bv=(b.maker||'').toLowerCase(); }
+    else{ av=Number(a.sl)||0; bv=Number(b.sl)||0; }
+    if(av<bv) return autoSortState.dir==='asc'?-1:1;
+    if(av>bv) return autoSortState.dir==='asc'?1:-1;
+    return 0;
+  });
+  return out;
+}
+function currentAutoDisplaySl(id){
+  const list = applyAutoFilterSort(automationData);
+  const idx = list.findIndex(x=>x.id===id);
+  return idx > -1 ? idx+1 : '';
+}
+function selectedAutoIds(){ return [...document.querySelectorAll('#autoTableBody .rowChk:checked')].map(c=>c.dataset.id); }
+function updateAutoActionButtons(){
+  const sel = selectedAutoIds();
+  document.getElementById('autoEditBtn').disabled = sel.length!==1;
+  document.getElementById('autoDeleteBtn').disabled = sel.length===0;
+}
+function renderAuto(){
+  const list = applyAutoFilterSort(automationData);
+  const body = document.getElementById('autoTableBody');
+  const empty = document.getElementById('autoEmptyState');
+  document.querySelectorAll('#autoTable thead th .arrow').forEach(a=>a.textContent='');
+  const activeTh = document.querySelector(`#autoTable thead th[data-key="${autoSortState.key}"] .arrow`);
+  if(activeTh) activeTh.textContent = autoSortState.dir==='asc'?'▲':'▼';
+  if(list.length===0){ body.innerHTML=''; empty.style.display='block'; }
+  else{
+    empty.style.display='none';
+    body.innerHTML = list.map((f,i)=>`
+      <tr${rowStyleAttr(f.color)}>
+        <td><input type="checkbox" class="chk rowChk" data-id="${f.id}"></td>
+        <td><button class="mark-btn" type="button" data-id="${f.id}" style="${f.color?`background:${f.color}`:''}"></button></td>
+        <td>${i+1}</td>
+        <td class="nowrap">${fmtDate(f.date)}</td>
+        <td><span class="clickable" data-popup-title="প্রজেক্টের নাম" data-popup-text="${escapeHtml(f.name||'')}">${escapeHtml(f.name)}</span></td>
+        <td><span class="type-badge">${escapeHtml(f.type)||'-'}</span></td>
+        <td class="narrow-col"><span class="clickable" data-popup-title="বর্ণনা" data-popup-text="${escapeHtml(f.desc||'')}">${escapeHtml(f.desc)||'-'}</span></td>
+        <td class="narrow-col"><span class="clickable" data-popup-title="লোকেশন" data-popup-text="${escapeHtml(f.location||'')}" data-popup-link="${escapeHtml(f.location||'')}">${escapeHtml(f.location)||'-'}</span></td>
+        <td>${escapeHtml(f.maker)||'-'}</td>
+        <td class="narrow-col"><span class="clickable" data-popup-title="নোট" data-popup-text="${escapeHtml(f.note||'')}" data-popup-sheet="automation" data-popup-id="${escapeHtml(f.id)}" data-popup-editable="note">${escapeHtml(f.note)||'-'}</span></td>
+        <td>${photoCellHtml('automation', f)}</td>
+      </tr>`).join('');
+  }
+  document.getElementById('checkAllAuto').checked = false;
+  updateAutoActionButtons();
+  updateDashboard();
+}
+document.getElementById('autoTableBody').addEventListener('change', (e)=>{ if(e.target.classList.contains('rowChk')) updateAutoActionButtons(); });
+document.getElementById('autoTableBody').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.mark-btn'); if(!btn) return;
+  e.stopPropagation();
+  openMarkMenu(btn, (color)=>{
+    const rec = automationData.find(x=>x.id===btn.dataset.id); if(!rec) return;
+    rec.color = color; persistAuto(); renderAuto();
+  });
+});
+document.getElementById('checkAllAuto').addEventListener('change',(e)=>{ document.querySelectorAll('#autoTableBody .rowChk').forEach(c=>c.checked=e.target.checked); updateAutoActionButtons(); });
+document.querySelectorAll('#autoTable thead th[data-key]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key=th.dataset.key;
+    if(autoSortState.key===key){ autoSortState.dir = autoSortState.dir==='asc'?'desc':'asc'; } else { autoSortState={key,dir:'asc'}; }
+    document.getElementById('autoSortSelect').value='';
+    renderAuto();
+  });
+});
+document.getElementById('autoSortSelect').addEventListener('change',(e)=>{ const [key,dir]=e.target.value.split('_'); if(key){ autoSortState={key,dir}; renderAuto(); } });
+document.getElementById('autoSearchInput').addEventListener('input', renderAuto);
+document.getElementById('autoTypeFilter').addEventListener('change', renderAuto);
+document.getElementById('autoFromDate').addEventListener('change', renderAuto);
+document.getElementById('autoToDate').addEventListener('change', renderAuto);
+
+function resizeImageFile(file, maxW, maxH, cb){
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.width, h = img.height;
+      const ratio = Math.min(maxW/w, maxH/h, 1);
+      w = Math.round(w*ratio); h = Math.round(h*ratio);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      cb(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+const autoOverlay = document.getElementById('autoOverlay');
+document.getElementById('a_type').addEventListener('change',(e)=>{
+  document.getElementById('a_type_custom').style.display = e.target.value==='custom' ? 'block' : 'none';
+});
+document.getElementById('autoAddBtn').addEventListener('click', ()=>{
+  document.getElementById('autoModalTitle').textContent = 'নতুন অটোমেশন প্রজেক্ট যোগ করুন';
+  document.getElementById('autoEditId').value='';
+  document.getElementById('a_sl').value = nextAutoSL();
+  document.getElementById('a_date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('a_name').value=''; document.getElementById('a_type').value='custom';
+  document.getElementById('a_type_custom').value=''; document.getElementById('a_type_custom').style.display='block';
+  document.getElementById('a_maker').value=''; document.getElementById('a_desc').value='';
+  document.getElementById('a_location').value=''; document.getElementById('a_note').value='';
+  refreshMakerList();
+  autoOverlay.classList.add('active');
+});
+document.getElementById('autoEditBtn').addEventListener('click', ()=>{
+  const ids = selectedAutoIds(); if(ids.length!==1) return;
+  const f = automationData.find(x=>x.id===ids[0]); if(!f) return;
+  document.getElementById('autoModalTitle').textContent = 'অটোমেশন প্রজেক্ট এডিট করুন';
+  document.getElementById('autoEditId').value = f.id;
+  document.getElementById('a_sl').value=currentAutoDisplaySl(f.id); document.getElementById('a_date').value=f.date; document.getElementById('a_name').value=f.name;
+  const knownTypes = ['RainMaker','Firebase'];
+  if(knownTypes.includes(f.type)){ document.getElementById('a_type').value=f.type; document.getElementById('a_type_custom').style.display='none'; document.getElementById('a_type_custom').value=''; }
+  else{ document.getElementById('a_type').value='custom'; document.getElementById('a_type_custom').style.display='block'; document.getElementById('a_type_custom').value=f.type||''; }
+  document.getElementById('a_maker').value=f.maker; document.getElementById('a_desc').value=f.desc;
+  document.getElementById('a_location').value=f.location; document.getElementById('a_note').value=f.note;
+  refreshMakerList();
+  autoOverlay.classList.add('active');
+});
+document.getElementById('autoDeleteBtn').addEventListener('click', ()=>{
+  const ids = selectedAutoIds(); if(ids.length===0) return;
+  if(!confirm(`আপনি কি নিশ্চিত ${ids.length}টি এন্ট্রি ডিলিট করতে চান?`)) return;
+  ids.forEach(id=>syncToSheet('delete', {id}, 'automation'));
+  automationData = automationData.filter(f=>!ids.includes(f.id));
+  persistAuto(); renderAuto();
+});
+document.getElementById('autoSaveBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('a_name').value.trim();
+  if(!name){ alert('প্রজেক্টের নাম দিন'); return; }
+  const typeSel = document.getElementById('a_type').value;
+  const type = typeSel==='custom' ? document.getElementById('a_type_custom').value.trim() : typeSel;
+  const maker = document.getElementById('a_maker').value.trim();
+  const id = document.getElementById('autoEditId').value;
+  const existing = id ? automationData.find(x=>x.id===id) : null;
+  const recordId = id || 'a_'+Date.now();
+  const record = { id: recordId, sl: document.getElementById('a_sl').value, date: document.getElementById('a_date').value,
+    name, type, maker, desc: document.getElementById('a_desc').value, location: document.getElementById('a_location').value,
+    note: document.getElementById('a_note').value, color: existing ? (existing.color||'') : '',
+    photos: existing ? (existing.photos||[]) : [] };
+  const idx = automationData.findIndex(x=>x.id===record.id);
+  if(idx>-1){ automationData[idx]=record; } else{ automationData.push(record); }
+  persistAuto(); renderAuto(); refreshMakerList();
+  if(maker){ let saved=[]; try{ saved=JSON.parse(localStorage.getItem(uKey(MAKER_KEY))||'[]'); }catch(e){} if(!saved.includes(maker)){ saved.push(maker); localStorage.setItem(uKey(MAKER_KEY), JSON.stringify(saved)); } }
+  autoOverlay.classList.remove('active');
+  syncToSheet(idx>-1 ? 'update' : 'add', record, 'automation');
+});
+document.getElementById('autoSyncBtn').addEventListener('click', ()=>pullFromSheet('automation'));
+
+/* ============================================================
+   CARD 4: EMAIL
+   ============================================================ */
+const EMAIL_KEY = 'emailVaultData';
+let emailData = [];
+let emailSortState = { key:'date', dir:'desc' };
+
+function loadEmail(){ try{ emailData = JSON.parse(localStorage.getItem(uKey(EMAIL_KEY))||'[]'); }catch(e){ emailData=[]; } renderEmail(); }
+function persistEmail(){ localStorage.setItem(uKey(EMAIL_KEY), JSON.stringify(emailData)); updateDashboard(); }
+function nextEmailSL(){ return emailData.length ? Math.max(...emailData.map(f=>Number(f.sl)||0))+1 : 1; }
+function applyEmailFilterSort(list){
+  const q = document.getElementById('emailSearchInput').value.trim().toLowerCase();
+  const fromD = document.getElementById('emailFromDate').value;
+  const toD = document.getElementById('emailToDate').value;
+  let out = list.filter(f=> {
+    const matchesQ = !q || (f.name||'').toLowerCase().includes(q) || (f.email||'').toLowerCase().includes(q);
+    const matchesFrom = !fromD || (f.date||'') >= fromD;
+    const matchesTo = !toD || (f.date||'') <= toD;
+    return matchesQ && matchesFrom && matchesTo;
+  });
+  out.sort((a,b)=>{
+    let av,bv;
+    if(emailSortState.key==='name'){ av=(a.name||'').toLowerCase(); bv=(b.name||'').toLowerCase(); }
+    else if(emailSortState.key==='date'){ av=a.date||''; bv=b.date||''; }
+    else if(emailSortState.key==='lastUpdate'){ av=a.lastUpdate||''; bv=b.lastUpdate||''; }
+    else{ av=Number(a.sl)||0; bv=Number(b.sl)||0; }
+    if(av<bv) return emailSortState.dir==='asc'?-1:1;
+    if(av>bv) return emailSortState.dir==='asc'?1:-1;
+    return 0;
+  });
+  return out;
+}
+function currentEmailDisplaySl(id){
+  const list = applyEmailFilterSort(emailData);
+  const idx = list.findIndex(x=>x.id===id);
+  return idx > -1 ? idx+1 : '';
+}
+function selectedEmailIds(){ return [...document.querySelectorAll('#emailTableBody .rowChk:checked')].map(c=>c.dataset.id); }
+function updateEmailActionButtons(){
+  const sel = selectedEmailIds();
+  document.getElementById('emailEditBtn').disabled = sel.length!==1;
+  document.getElementById('emailDeleteBtn').disabled = sel.length===0;
+}
+function renderEmail(){
+  const list = applyEmailFilterSort(emailData);
+  const body = document.getElementById('emailTableBody');
+  const empty = document.getElementById('emailEmptyState');
+  document.querySelectorAll('#emailTable thead th .arrow').forEach(a=>a.textContent='');
+  const activeTh = document.querySelector(`#emailTable thead th[data-key="${emailSortState.key}"] .arrow`);
+  if(activeTh) activeTh.textContent = emailSortState.dir==='asc'?'▲':'▼';
+  if(list.length===0){ body.innerHTML=''; empty.style.display='block'; }
+  else{
+    empty.style.display='none';
+    body.innerHTML = list.map((f,i)=>`
+      <tr${rowStyleAttr(f.color)}>
+        <td><input type="checkbox" class="chk rowChk" data-id="${f.id}"></td>
+        <td><button class="mark-btn" type="button" data-id="${f.id}" style="${f.color?`background:${f.color}`:''}"></button></td>
+        <td>${i+1}</td>
+        <td class="nowrap">${fmtDate(f.date)}</td>
+        <td>${escapeHtml(f.name)||'-'}</td>
+        <td><span class="clickable" data-popup-title="ইমেইল" data-popup-text="${escapeHtml(f.email||'')}">${escapeHtml(f.email)||'-'}</span></td>
+        <td><span class="pw-cell"><span class="pw-mask" data-pw="${escapeHtml(f.password)||''}">••••••••</span><button class="pw-toggle" data-pw-toggle>👁</button></span></td>
+        <td><span class="clickable" data-popup-title="রিকভারি ইমেইল" data-popup-text="${escapeHtml(f.recovery||'')}">${escapeHtml(f.recovery)||'-'}</span></td>
+        <td>${escapeHtml(f.mobile)||'-'}</td>
+        <td>${escapeHtml(f.passkey)||'-'}</td>
+        <td class="nowrap">${fmtDate(f.lastUpdate)}</td>
+        <td class="narrow-col"><span class="clickable" data-popup-title="নোট" data-popup-text="${escapeHtml(f.note||'')}" data-popup-sheet="email" data-popup-id="${escapeHtml(f.id)}" data-popup-editable="note">${escapeHtml(f.note)||'-'}</span></td>
+      </tr>`).join('');
+  }
+  document.getElementById('checkAllEmail').checked = false;
+  updateEmailActionButtons();
+  updateDashboard();
+}
+document.getElementById('emailTableBody').addEventListener('click', (e)=>{
+  const pwBtn = e.target.closest('[data-pw-toggle]');
+  if(pwBtn){
+    const span = pwBtn.previousElementSibling;
+    if(span.textContent === '••••••••'){ span.textContent = span.dataset.pw || '(খালি)'; pwBtn.textContent = '🙈'; }
+    else { span.textContent = '••••••••'; pwBtn.textContent = '👁'; }
+    return;
+  }
+  const btn = e.target.closest('.mark-btn'); if(!btn) return;
+  e.stopPropagation();
+  openMarkMenu(btn, (color)=>{
+    const rec = emailData.find(x=>x.id===btn.dataset.id); if(!rec) return;
+    rec.color = color; persistEmail(); renderEmail();
+  });
+});
+document.getElementById('emailTableBody').addEventListener('change', (e)=>{ if(e.target.classList.contains('rowChk')) updateEmailActionButtons(); });
+document.getElementById('checkAllEmail').addEventListener('change',(e)=>{ document.querySelectorAll('#emailTableBody .rowChk').forEach(c=>c.checked=e.target.checked); updateEmailActionButtons(); });
+document.querySelectorAll('#emailTable thead th[data-key]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key=th.dataset.key;
+    if(emailSortState.key===key){ emailSortState.dir = emailSortState.dir==='asc'?'desc':'asc'; } else { emailSortState={key,dir:'asc'}; }
+    document.getElementById('emailSortSelect').value='';
+    renderEmail();
+  });
+});
+document.getElementById('emailSortSelect').addEventListener('change',(e)=>{ const [key,dir]=e.target.value.split('_'); if(key){ emailSortState={key,dir}; renderEmail(); } });
+document.getElementById('emailSearchInput').addEventListener('input', renderEmail);
+document.getElementById('emailFromDate').addEventListener('change', renderEmail);
+document.getElementById('emailToDate').addEventListener('change', renderEmail);
+
+const emailOverlay = document.getElementById('emailOverlay');
+document.getElementById('emailAddBtn').addEventListener('click', ()=>{
+  document.getElementById('emailModalTitle').textContent = 'নতুন ইমেইল এন্ট্রি যোগ করুন';
+  document.getElementById('emailEditId').value='';
+  document.getElementById('e_sl').value = nextEmailSL();
+  document.getElementById('e_date').value = new Date().toISOString().split('T')[0];
+  ['e_name','e_email','e_password','e_recovery','e_mobile','e_passkey','e_note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('e_lastupdate').value = new Date().toISOString().split('T')[0];
+  emailOverlay.classList.add('active');
+});
+document.getElementById('emailEditBtn').addEventListener('click', ()=>{
+  const ids = selectedEmailIds(); if(ids.length!==1) return;
+  const f = emailData.find(x=>x.id===ids[0]); if(!f) return;
+  document.getElementById('emailModalTitle').textContent = 'ইমেইল এন্ট্রি এডিট করুন';
+  document.getElementById('emailEditId').value=f.id;
+  document.getElementById('e_sl').value=currentEmailDisplaySl(f.id); document.getElementById('e_date').value=f.date; document.getElementById('e_name').value=f.name;
+  document.getElementById('e_email').value=f.email; document.getElementById('e_password').value=f.password; document.getElementById('e_recovery').value=f.recovery;
+  document.getElementById('e_mobile').value=f.mobile; document.getElementById('e_passkey').value=f.passkey; document.getElementById('e_lastupdate').value=f.lastUpdate;
+  document.getElementById('e_note').value=f.note;
+  emailOverlay.classList.add('active');
+});
+document.getElementById('emailDeleteBtn').addEventListener('click', ()=>{
+  const ids = selectedEmailIds(); if(ids.length===0) return;
+  if(!confirm(`আপনি কি নিশ্চিত ${ids.length}টি এন্ট্রি ডিলিট করতে চান?`)) return;
+  ids.forEach(id=>syncToSheet('delete', {id}, 'email'));
+  emailData = emailData.filter(f=>!ids.includes(f.id));
+  persistEmail(); renderEmail();
+});
+document.getElementById('emailSaveBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('e_name').value.trim();
+  const email = document.getElementById('e_email').value.trim();
+  if(!name){ alert('নেম দিন'); return; }
+  if(!email){ alert('ইমেইল দিন'); return; }
+  const id = document.getElementById('emailEditId').value;
+  const existing = id ? emailData.find(x=>x.id===id) : null;
+  const record = { id: id || 'e_'+Date.now(), sl: document.getElementById('e_sl').value, date: document.getElementById('e_date').value,
+    name, email, password: document.getElementById('e_password').value, recovery: document.getElementById('e_recovery').value,
+    mobile: document.getElementById('e_mobile').value, passkey: document.getElementById('e_passkey').value,
+    lastUpdate: document.getElementById('e_lastupdate').value, note: document.getElementById('e_note').value,
+    color: existing ? (existing.color||'') : '' };
+  if(id){ const idx=emailData.findIndex(x=>x.id===id); emailData[idx]=record; syncToSheet('update', record, 'email'); }
+  else{ emailData.push(record); syncToSheet('add', record, 'email'); }
+  persistEmail(); renderEmail(); emailOverlay.classList.remove('active');
+});
+document.getElementById('emailSyncBtn').addEventListener('click', ()=>pullFromSheet('email'));
+
+/* ============================================================
+   CARD 5: PASSWORD NOTE
+   ============================================================ */
+const PW_KEY = 'passwordNoteVaultData';
+let passwordNoteData = [];
+let pwSortState = { key:'date', dir:'desc' };
+
+function loadPasswordNote(){ try{ passwordNoteData = migratePhotosArray(JSON.parse(localStorage.getItem(uKey(PW_KEY))||'[]')); }catch(e){ passwordNoteData=[]; } renderPasswordNote(); }
+function persistPasswordNote(){ localStorage.setItem(uKey(PW_KEY), JSON.stringify(passwordNoteData)); updateDashboard(); }
+function nextPwSL(){ return passwordNoteData.length ? Math.max(...passwordNoteData.map(f=>Number(f.sl)||0))+1 : 1; }
+function applyPwFilterSort(list){
+  const q = document.getElementById('pwSearchInput').value.trim().toLowerCase();
+  const fromD = document.getElementById('pwFromDate').value;
+  const toD = document.getElementById('pwToDate').value;
+  let out = list.filter(f=> {
+    const matchesQ = !q || (f.siteName||'').toLowerCase().includes(q) || (f.name||'').toLowerCase().includes(q) || (f.email||'').toLowerCase().includes(q);
+    const matchesFrom = !fromD || (f.date||'') >= fromD;
+    const matchesTo = !toD || (f.date||'') <= toD;
+    return matchesQ && matchesFrom && matchesTo;
+  });
+  out.sort((a,b)=>{
+    let av,bv;
+    if(pwSortState.key==='name'){ av=(a.name||'').toLowerCase(); bv=(b.name||'').toLowerCase(); }
+    else if(pwSortState.key==='date'){ av=a.date||''; bv=b.date||''; }
+    else{ av=Number(a.sl)||0; bv=Number(b.sl)||0; }
+    if(av<bv) return pwSortState.dir==='asc'?-1:1;
+    if(av>bv) return pwSortState.dir==='asc'?1:-1;
+    return 0;
+  });
+  return out;
+}
+function currentPwDisplaySl(id){
+  const list = applyPwFilterSort(passwordNoteData);
+  const idx = list.findIndex(x=>x.id===id);
+  return idx > -1 ? idx+1 : '';
+}
+function selectedPwIds(){ return [...document.querySelectorAll('#pwTableBody .rowChk:checked')].map(c=>c.dataset.id); }
+function updatePwActionButtons(){
+  const sel = selectedPwIds();
+  document.getElementById('pwEditBtn').disabled = sel.length!==1;
+  document.getElementById('pwDeleteBtn').disabled = sel.length===0;
+}
+function renderPasswordNote(){
+  const list = applyPwFilterSort(passwordNoteData);
+  const body = document.getElementById('pwTableBody');
+  const empty = document.getElementById('pwEmptyState');
+  document.querySelectorAll('#pwTable thead th .arrow').forEach(a=>a.textContent='');
+  const activeTh = document.querySelector(`#pwTable thead th[data-key="${pwSortState.key}"] .arrow`);
+  if(activeTh) activeTh.textContent = pwSortState.dir==='asc'?'▲':'▼';
+  if(list.length===0){ body.innerHTML=''; empty.style.display='block'; }
+  else{
+    empty.style.display='none';
+    body.innerHTML = list.map((f,i)=>`
+      <tr${rowStyleAttr(f.color)}>
+        <td><input type="checkbox" class="chk rowChk" data-id="${f.id}"></td>
+        <td><button class="mark-btn" type="button" data-id="${f.id}" style="${f.color?`background:${f.color}`:''}"></button></td>
+        <td>${i+1}</td>
+        <td class="nowrap">${fmtDate(f.date)}</td>
+        <td><span class="clickable" data-popup-title="সাইট নেম" data-popup-text="${escapeHtml(f.siteName||'')}">${escapeHtml(f.siteName)||'-'}</span></td>
+        <td>${escapeHtml(f.name)||'-'}</td>
+        <td>${escapeHtml(f.userName)||'-'}</td>
+        <td><span class="clickable" data-popup-title="ইমেইল" data-popup-text="${escapeHtml(f.email||'')}">${escapeHtml(f.email)||'-'}</span></td>
+        <td><span class="pw-cell"><span class="pw-mask" data-pw="${escapeHtml(f.password)||''}">••••••••</span><button class="pw-toggle" data-pw-toggle>👁</button></span></td>
+        <td><span class="clickable" data-popup-title="নোট" data-popup-text="${escapeHtml(f.note||'')}" data-popup-sheet="passwordNote" data-popup-id="${escapeHtml(f.id)}" data-popup-editable="note">${escapeHtml(f.note)||'-'}</span></td>
+        <td>${photoCellHtml('passwordNote', f)}</td>
+      </tr>`).join('');
+  }
+  document.getElementById('checkAllPw').checked = false;
+  updatePwActionButtons();
+  updateDashboard();
+}
+document.getElementById('pwTableBody').addEventListener('click', (e)=>{
+  const pwBtn = e.target.closest('[data-pw-toggle]');
+  if(pwBtn){
+    const span = pwBtn.previousElementSibling;
+    if(span.textContent === '••••••••'){ span.textContent = span.dataset.pw || '(খালি)'; pwBtn.textContent = '🙈'; }
+    else { span.textContent = '••••••••'; pwBtn.textContent = '👁'; }
+    return;
+  }
+  const btn = e.target.closest('.mark-btn'); if(!btn) return;
+  e.stopPropagation();
+  openMarkMenu(btn, (color)=>{
+    const rec = passwordNoteData.find(x=>x.id===btn.dataset.id); if(!rec) return;
+    rec.color = color; persistPasswordNote(); renderPasswordNote();
+  });
+});
+document.getElementById('pwTableBody').addEventListener('change', (e)=>{ if(e.target.classList.contains('rowChk')) updatePwActionButtons(); });
+document.getElementById('checkAllPw').addEventListener('change',(e)=>{ document.querySelectorAll('#pwTableBody .rowChk').forEach(c=>c.checked=e.target.checked); updatePwActionButtons(); });
+document.querySelectorAll('#pwTable thead th[data-key]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key=th.dataset.key;
+    if(pwSortState.key===key){ pwSortState.dir = pwSortState.dir==='asc'?'desc':'asc'; } else { pwSortState={key,dir:'asc'}; }
+    document.getElementById('pwSortSelect').value='';
+    renderPasswordNote();
+  });
+});
+document.getElementById('pwSortSelect').addEventListener('change',(e)=>{ const [key,dir]=e.target.value.split('_'); if(key){ pwSortState={key,dir}; renderPasswordNote(); } });
+document.getElementById('pwSearchInput').addEventListener('input', renderPasswordNote);
+document.getElementById('pwFromDate').addEventListener('change', renderPasswordNote);
+document.getElementById('pwToDate').addEventListener('change', renderPasswordNote);
+
+const pwOverlay = document.getElementById('pwOverlay');
+document.getElementById('pwAddBtn').addEventListener('click', ()=>{
+  document.getElementById('pwModalTitle').textContent = 'নতুন পাসওয়ার্ড নোট যোগ করুন';
+  document.getElementById('pw_editId').value='';
+  document.getElementById('pw_sl').value = nextPwSL();
+  document.getElementById('pw_date').value = new Date().toISOString().split('T')[0];
+  ['pw_siteName','pw_name','pw_userName','pw_email','pw_password','pw_note'].forEach(id=>document.getElementById(id).value='');
+  pwOverlay.classList.add('active');
+});
+document.getElementById('pwEditBtn').addEventListener('click', ()=>{
+  const ids = selectedPwIds(); if(ids.length!==1) return;
+  const f = passwordNoteData.find(x=>x.id===ids[0]); if(!f) return;
+  document.getElementById('pwModalTitle').textContent = 'পাসওয়ার্ড নোট এডিট করুন';
+  document.getElementById('pw_editId').value=f.id;
+  document.getElementById('pw_sl').value=currentPwDisplaySl(f.id); document.getElementById('pw_date').value=f.date;
+  document.getElementById('pw_siteName').value=f.siteName; document.getElementById('pw_name').value=f.name;
+  document.getElementById('pw_userName').value=f.userName; document.getElementById('pw_email').value=f.email;
+  document.getElementById('pw_password').value=f.password; document.getElementById('pw_note').value=f.note;
+  pwOverlay.classList.add('active');
+});
+document.getElementById('pwDeleteBtn').addEventListener('click', ()=>{
+  const ids = selectedPwIds(); if(ids.length===0) return;
+  if(!confirm(`আপনি কি নিশ্চিত ${ids.length}টি এন্ট্রি ডিলিট করতে চান?`)) return;
+  ids.forEach(id=>syncToSheet('delete', {id}, 'passwordNote'));
+  passwordNoteData = passwordNoteData.filter(f=>!ids.includes(f.id));
+  persistPasswordNote(); renderPasswordNote();
+});
+document.getElementById('pwSaveBtn').addEventListener('click', ()=>{
+  const siteName = document.getElementById('pw_siteName').value.trim();
+  if(!siteName){ alert('সাইট নেম দিন'); return; }
+  const id = document.getElementById('pw_editId').value;
+  const existing = id ? passwordNoteData.find(x=>x.id===id) : null;
+  const record = { id: id || 'pw_'+Date.now(), sl: document.getElementById('pw_sl').value, date: document.getElementById('pw_date').value,
+    siteName, name: document.getElementById('pw_name').value, userName: document.getElementById('pw_userName').value,
+    email: document.getElementById('pw_email').value, password: document.getElementById('pw_password').value,
+    note: document.getElementById('pw_note').value, color: existing ? (existing.color||'') : '',
+    photos: existing ? (existing.photos||[]) : [] };
+  if(id){ const idx=passwordNoteData.findIndex(x=>x.id===id); passwordNoteData[idx]=record; syncToSheet('update', record, 'passwordNote'); }
+  else{ passwordNoteData.push(record); syncToSheet('add', record, 'passwordNote'); }
+  persistPasswordNote(); renderPasswordNote(); pwOverlay.classList.remove('active');
+});
+document.getElementById('pwSyncBtn').addEventListener('click', ()=>pullFromSheet('passwordNote'));
+
+/* ---------- init (only runs after successful sign-in) ---------- */
+function initDashboardApp(){
+  loadSettings();
+  loadExtraLinks();
+  loadFiles();
+  loadAuto();
+  loadEmail();
+  loadPasswordNote();
+  setupSearchClear('searchInput','searchClearBtn', ['fromDate','toDate'], render);
+  setupSearchClear('autoSearchInput','autoSearchClearBtn', ['autoFromDate','autoToDate'], renderAuto);
+  setupSearchClear('emailSearchInput','emailSearchClearBtn', ['emailFromDate','emailToDate'], renderEmail);
+  setupSearchClear('pwSearchInput','pwSearchClearBtn', ['pwFromDate','pwToDate'], renderPasswordNote);
+  // Local cache paints instantly above; now pull each tab's latest data
+  // from the shared Google Sheet so the same account sees the same data
+  // on any device, automatically.
+  if(settings.scriptUrl){
+    pullFromSheet('files');
+    pullFromSheet('automation');
+    pullFromSheet('email');
+    pullFromSheet('passwordNote');
+  }
+}
+
+/* ============================================================
+   LOGIN / SIGNUP
+   ============================================================
+   One shared Apps Script + Google Sheet serves every account. Each
+   account's Files/Automation/Email data lives in its own tabs on the
+   backend (kept apart by userId), so logging in with the same userId
+   + password on any device automatically shows that account's own
+   data — nothing is stored per-browser except the session itself.
+
+   SECURITY NOTE: this is a lightweight login for a private/family
+   dashboard, not enterprise-grade auth. The password is hashed in the
+   browser (sha256Hex below) before it's ever sent — the raw password
+   never travels over the network or touches a sheet cell — and the
+   backend salts + re-hashes it again before storing. But there is no
+   session expiry or rate-limiting, so this is meant for people you
+   trust with the Web App URL, not for protecting against a
+   determined attacker. */
+const SESSION_KEY = 'fileVaultSession';
+let session = null; // { userId, passHash, fullName, email }
+
+function sha256Hex(str){
+  function rotr(x,n){ return (x>>>n) | (x<<(32-n)); }
+  const K = [
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+  ];
+  let H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const bytes = [];
+  const utf8 = unescape(encodeURIComponent(str));
+  for(let i=0;i<utf8.length;i++) bytes.push(utf8.charCodeAt(i)&0xff);
+  const bitLen = bytes.length*8;
+  bytes.push(0x80);
+  while(bytes.length % 64 !== 56) bytes.push(0);
+  for(let i=7;i>=0;i--) bytes.push(Math.floor(bitLen / Math.pow(2,i*8)) & 0xff);
+  for(let chunkStart=0; chunkStart<bytes.length; chunkStart+=64){
+    const w = new Array(64).fill(0);
+    for(let i=0;i<16;i++){
+      w[i] = (bytes[chunkStart+i*4]<<24) | (bytes[chunkStart+i*4+1]<<16) | (bytes[chunkStart+i*4+2]<<8) | (bytes[chunkStart+i*4+3]);
+    }
+    for(let i=16;i<64;i++){
+      const s0 = rotr(w[i-15],7) ^ rotr(w[i-15],18) ^ (w[i-15]>>>3);
+      const s1 = rotr(w[i-2],17) ^ rotr(w[i-2],19) ^ (w[i-2]>>>10);
+      w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
+    }
+    let [a,b,c,d,e,f,g,h] = H;
+    for(let i=0;i<64;i++){
+      const S1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (h + S1 + ch + K[i] + w[i]) | 0;
+      const S0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (S0 + maj) | 0;
+      h=g; g=f; f=e; e=(d+temp1)|0; d=c; c=b; b=a; a=(temp2+temp1)|0;
+    }
+    H[0]=(H[0]+a)|0; H[1]=(H[1]+b)|0; H[2]=(H[2]+c)|0; H[3]=(H[3]+d)|0;
+    H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
+  }
+  return H.map(x => (x>>>0).toString(16).padStart(8,'0')).join('');
+}
+
+function authShowError(msg){
+  const el = document.getElementById('authError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function authClearError(){ document.getElementById('authError').style.display = 'none'; }
+function authSetBusy(busy){
+  document.getElementById('authBusy').style.display = busy ? 'block' : 'none';
+  document.getElementById('authSubmitBtn').disabled = busy;
+}
+
+let authMode = 'signin';
+document.getElementById('authToggleLink').addEventListener('click', (ev)=>{
+  ev.preventDefault();
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  authClearError();
+  if(authMode === 'signup'){
+    document.getElementById('signInFields').style.display = 'none';
+    document.getElementById('signUpFields').style.display = 'block';
+    document.getElementById('authTitle').textContent = '📝 সাইন আপ করুন';
+    document.getElementById('authSubmitBtn').textContent = 'সাইন আপ করুন';
+    document.getElementById('authToggleLink').textContent = 'আগে থেকে একাউন্ট আছে? সাইন ইন করুন';
+  } else {
+    document.getElementById('signUpFields').style.display = 'none';
+    document.getElementById('signInFields').style.display = 'block';
+    document.getElementById('authTitle').textContent = '🔐 সাইন ইন করুন';
+    document.getElementById('authSubmitBtn').textContent = 'সাইন ইন করুন';
+    document.getElementById('authToggleLink').textContent = 'নতুন? সাইন আপ করুন';
+  }
+});
+
+document.querySelectorAll('.authpw-toggle').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const input = document.getElementById(btn.dataset.pwTarget);
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    btn.textContent = showing ? '👁️' : '🙈';
+  });
+});
+
+function saveAuthUrl(url){
+  settings.scriptUrl = url;
+  saveSettingsToStorage();
+  const settingsInput = document.getElementById('scriptUrl');
+  if(settingsInput) settingsInput.value = url;
+}
+
+document.getElementById('authSubmitBtn').addEventListener('click', ()=>{
+  authClearError();
+  const url = document.getElementById('authScriptUrl').value.trim();
+  if(!url){ authShowError('আগে Google Apps Script Web App URL দিন।'); return; }
+
+  if(authMode === 'signin'){
+    const userId = document.getElementById('si_userId').value.trim();
+    const password = document.getElementById('si_password').value;
+    if(!userId || !password){ authShowError('ইউজার আইডি ও পাসওয়ার্ড দিন।'); return; }
+    authSetBusy(true);
+    const passHash = sha256Hex(password);
+    jsonpRequest(url, {action:'login', userId, passHash}, (res)=>{
+      authSetBusy(false);
+      if(res && res.status === 'ok'){
+        saveAuthUrl(url);
+        startSession({ userId, passHash, fullName: res.fullName, email: res.email });
+      } else {
+        authShowError('ইউজার আইডি বা পাসওয়ার্ড ভুল।');
+      }
+    }, ()=>{ authSetBusy(false); authShowError('সংযোগ করা যায়নি — URL ঠিক আছে কিনা দেখুন।'); });
+  } else {
+    const fullName = document.getElementById('su_fullName').value.trim();
+    const userId = document.getElementById('su_userId').value.trim();
+    const email = document.getElementById('su_email').value.trim();
+    const password = document.getElementById('su_password').value;
+    const password2 = document.getElementById('su_password2').value;
+    if(!fullName || !userId || !email || !password){ authShowError('সবগুলো ঘর পূরণ করুন।'); return; }
+    if(!/^[A-Za-z0-9_-]+$/.test(userId)){ authShowError('ইউজার আইডিতে শুধু ইংরেজি অক্ষর, সংখ্যা, _ বা - ব্যবহার করুন।'); return; }
+    if(password !== password2){ authShowError('দুটো পাসওয়ার্ড মিলছে না।'); return; }
+    if(password.length < 4){ authShowError('পাসওয়ার্ড অন্তত ৪ ক্যারেক্টার দিন।'); return; }
+    authSetBusy(true);
+    const passHash = sha256Hex(password);
+    jsonpRequest(url, {action:'signup', fullName, userId, email, passHash}, (res)=>{
+      authSetBusy(false);
+      if(res && res.status === 'ok'){
+        saveAuthUrl(url);
+        startSession({ userId, passHash, fullName, email });
+      } else if(res && res.message === 'userId_taken'){
+        authShowError('এই ইউজার আইডি ইতিমধ্যে ব্যবহার হয়েছে, অন্য একটা দিন।');
+      } else {
+        authShowError('সাইন আপ ব্যর্থ হয়েছে, আবার চেষ্টা করুন।');
+      }
+    }, ()=>{ authSetBusy(false); authShowError('সংযোগ করা যায়নি — URL ঠিক আছে কিনা দেখুন।'); });
+  }
+});
+
+function startSession(sess){
+  session = sess;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  document.getElementById('authOverlay').classList.remove('active');
+  document.getElementById('appRoot').style.display = '';
+  document.getElementById('sideUserName').textContent = '👤 ' + (session.fullName || session.userId);
+  initDashboardApp();
+}
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  if(!confirm('লগআউট করতে চান?')) return;
+  // প্রতিটি একাউন্টের ডাটা এমনিতেই আলাদা userId-suffixed key-তে (uKey) থাকে,
+  // তাই এখানে সেগুলো মোছার দরকার নেই — অন্য একাউন্ট সাইন ইন করলে সে তার
+  // নিজের আলাদা key-ই ব্যবহার করবে, কারো ডাটা কারো সাথে মিশবে না। শুধু
+  // সেশনটাই সাফ করা হচ্ছে, যাতে এই ডিভাইসে যেকোনো একাউন্ট দিয়ে সাইন
+  // ইন করলে তার নিজের ক্যাশ করা ডাটা (যেমন এখনো Drive-এ যায়নি এমন ছবি) ফিরে পাওয়া যায়।
+  localStorage.removeItem(SESSION_KEY);
+  session = null;
+  location.reload();
+});
+
+/* ---------- boot ---------- */
+document.getElementById('authUrlToggleLink').addEventListener('click', (ev)=>{
+  ev.preventDefault();
+  document.getElementById('authUrlField').style.display = 'block';
+  document.getElementById('authUrlToggleRow').style.display = 'none';
+});
+(function boot(){
+  loadSettings();
+  document.getElementById('authScriptUrl').value = settings.scriptUrl || '';
+  // URL একবার সেভ হয়ে গেলে সাইন ইন স্ক্রিনে আর দেখানোর দরকার নেই — চুপচাপ
+  // সেভ করা URL-টাই ব্যবহার হবে। প্রয়োজনে ছোট লিংক থেকে আবার দেখানো যাবে।
+  if(settings.scriptUrl){
+    document.getElementById('authUrlField').style.display = 'none';
+    document.getElementById('authUrlToggleRow').style.display = 'block';
+  }
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }catch(e){}
+  if(saved && saved.userId && saved.passHash){
+    startSession(saved);
+  }
+})();
+</script>
+</body>
+</html>
